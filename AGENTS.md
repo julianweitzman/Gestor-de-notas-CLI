@@ -31,6 +31,8 @@ Usá pytest y archivos `test_*.py` con funciones `test_*`. Cubrí validación, c
 
 ## Commits y pull requests
 
+Siempre que modifiques código, al finalizar los cambios y ejecutar las verificaciones correspondientes, debés hacer un commit y un push al remoto. No esperes a que el usuario lo solicite por separado.
+
 El repositorio todavía no tiene commits; no hay una convención histórica. Escribí mensajes breves y descriptivos y agrupá cambios relacionados. Cada PR debe explicar el comportamiento resultante, indicar pruebas ejecutadas y vincular una incidencia cuando corresponda. Actualizá el README si cambian comandos o configuración.
 
 ## Datos y configuración
