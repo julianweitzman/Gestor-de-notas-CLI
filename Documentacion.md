@@ -115,6 +115,21 @@ Usá el ID obtenido al crear la nota o al listar las existentes:
 
 Muestra ID, nombre, fecha y texto completo. Reemplazá `1` por el ID que corresponda. Si no existe, se informa el error; el ID debe ser un entero mayor que cero.
 
+### Buscar por nombre y seleccionar
+
+```powershell
+notas ver "Compras"
+notas ver "comp"
+notas ver --nombre "123"
+notas ver
+```
+
+La búsqueda encuentra nombres completos o parciales sin distinguir mayúsculas, incluidos caracteres Unicode. Sin argumento, pregunta qué nombre buscar. Una coincidencia se abre directamente; con varias, muestra una lista: usá las flechas arriba/abajo y Enter para abrir la seleccionada. Ctrl+C o Esc cierran la consulta. En scripts, usá el ID si hay varias coincidencias. `notas ver 1` sigue funcionando; `--nombre` permite buscar nombres numéricos.
+
+`GET /notas?nombre=texto` filtra por nombre; sin filtro sigue listando todas las notas. Crear un nombre repetido devuelve HTTP 409 y un mensaje en la CLI. SQLite garantiza la unicidad incluso ante creaciones simultáneas.
+
+Al abrir una base anterior, los nombres repetidos se migran automáticamente: se conserva el nombre de la nota con menor ID y se agrega ` (2)`, ` (3)`, etc. a las siguientes, evitando nombres ya existentes. No se eliminan notas ni se cambian sus IDs, textos o fechas. Esta migración ocurre una sola vez; si mantenés el servidor encendido, reinicialo para aplicar la actualización.
+
 ## 5. Consultar la ayuda
 
 ```powershell
@@ -166,8 +181,8 @@ Dejá esa terminal abierta y usá los comandos de notas en otra. Detené el serv
 
 | Método | Ruta | Función |
 | --- | --- | --- |
-| `POST` | `/notas` | Crear una nota con `nombre` y `texto`; devuelve estado 201. |
-| `GET` | `/notas` | Obtener las notas completas, desde la más reciente. |
+| `POST` | `/notas` | Crear una nota con `nombre` y `texto`; devuelve estado 201, o 409 si el nombre ya existe. |
+| `GET` | `/notas` | Obtener las notas completas, desde la más reciente; `?nombre=texto` filtra por nombre sin distinguir mayúsculas. |
 | `GET` | `/notas/{note_id}` | Consultar una nota; devuelve 404 si no existe. |
 | `GET` | `/health` | Consultar la identidad y la versión del protocolo. |
 
@@ -217,20 +232,16 @@ Para realizar un respaldo, detené el servidor y copiá `notas.sqlite3`. Para re
 
 ## 9. Alcance actual
 
-La aplicación está pensada para uso local de una persona. Permite crear, listar y consultar notas; todavía no incluye edición, eliminación, búsqueda ni sincronización. La API no tiene autenticación y escucha en la dirección local `127.0.0.1`.
+La aplicación está pensada para uso local de una persona. Permite crear, listar y consultar notas; todavía no incluye edición, eliminación ni sincronización. La API no tiene autenticación y escucha en la dirección local `127.0.0.1`.
 
 
-## Buscar por nombre y seleccionar
+## 10. Ejecutar las pruebas
+
+Instalá las dependencias de prueba y ejecutá pytest desde la raíz:
 
 ```powershell
-notas ver "Compras"
-notas ver "comp"
-notas ver --nombre "123"
-notas ver
+.\.venv\Scripts\python -m pip install -e ".[test]"
+.\.venv\Scripts\python -m pytest -q -p no:cacheprovider --basetemp=.test-tmp-local
 ```
 
-La búsqueda encuentra nombres completos o parciales sin distinguir mayúsculas, incluidos caracteres Unicode. Sin argumento, pregunta qué nombre buscar. Una coincidencia se abre directamente; con varias, muestra una lista: usá las flechas arriba/abajo y Enter para abrir la seleccionada. Ctrl+C o Esc cierran la consulta. En scripts, usá el ID si hay varias coincidencias. `notas ver 1` sigue funcionando; `--nombre` permite buscar nombres numéricos.
-
-`GET /notas?nombre=texto` filtra por nombre; sin filtro sigue listando todas las notas. Crear un nombre repetido devuelve HTTP 409 y un mensaje en la CLI. SQLite garantiza la unicidad incluso ante creaciones simultáneas.
-
-Al abrir una base anterior, los nombres repetidos se migran automáticamente: se conserva el nombre de la nota con menor ID y se agrega ` (2)`, ` (3)`, etc. a las siguientes, evitando nombres ya existentes. No se eliminan notas ni se cambian sus IDs, textos o fechas. Esta migración ocurre una sola vez; si mantenés el servidor encendido, reinicialo para aplicar la actualización.
+Esta variante crea las bases de prueba dentro del proyecto y evita depender de los permisos de la carpeta temporal del sistema. No modifica las notas personales. Reservá `.test-tmp-local` exclusivamente para pytest: su contenido se elimina al reutilizarla. Las carpetas `.test-tmp-*` no se incluyen en Git.

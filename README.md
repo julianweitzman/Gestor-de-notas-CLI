@@ -18,6 +18,7 @@ notas crear
 notas crear --nombre "Pendiente"
 notas listar
 notas ver 1
+notas ver "Idea"
 ```
 
 Si omitís el nombre, la CLI lo pregunta. Si omitís `--texto`, abre un editor de terminal con varias líneas: Enter agrega una línea, las flechas permiten moverse y Retroceso/Supr borran caracteres. Podés volver a líneas anteriores y corregirlas. Ctrl+S o F2 envían el contenido; Ctrl+C o Ctrl+Q cancelan sin guardar. Los atajos aparecen en pantalla. `--texto` sigue disponible para automatizar y no abre el editor.
@@ -40,12 +41,12 @@ Se guardan `notas.sqlite3` y `servidor.log` en el directorio de datos del usuari
 
 ## API
 
-- `POST /notas`: JSON con `nombre` y `texto`; devuelve la nota con estado 201.
-- `GET /notas`: notas completas, desde la más reciente.
+- `POST /notas`: JSON con `nombre` y `texto`; devuelve la nota con estado 201, o 409 si el nombre ya existe.
+- `GET /notas`: notas completas, desde la más reciente; `?nombre=texto` filtra por nombre completo o parcial sin distinguir mayúsculas.
 - `GET /notas/{id}`: nota completa, o 404 si no existe; IDs no positivos devuelven 422.
 - `GET /health`: identidad de aplicación y versión de protocolo.
 
-Cada nota devuelve `id`, `nombre`, `texto` y `creada_en`. No incluye edición, eliminación, búsqueda ni sincronización.
+Cada nota devuelve `id`, `nombre`, `texto` y `creada_en`. No incluye edición, eliminación ni sincronización.
 
 ## Pruebas
 
@@ -54,6 +55,14 @@ Cada nota devuelve `id`, `nombre`, `texto` y `creada_en`. No incluye edición, e
 ```
 
 Las pruebas usan directorios temporales y no modifican las notas del usuario.
+
+Si pytest no puede acceder a la carpeta temporal del sistema, ejecutalo desde la raíz con una carpeta temporal del proyecto y sin caché:
+
+```powershell
+.\.venv\Scripts\python -m pytest -q -p no:cacheprovider --basetemp=.test-tmp-local
+```
+
+Reservá `.test-tmp-local` para las pruebas: pytest elimina su contenido al reutilizarla. Las carpetas `.test-tmp-*` quedan excluidas de Git.
 
 
 ## Buscar por nombre y seleccionar
