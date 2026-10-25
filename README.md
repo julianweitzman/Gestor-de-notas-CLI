@@ -2,6 +2,8 @@
 
 CLI con Typer, API con FastAPI y almacenamiento local SQLite. Requiere Python 3.11 o posterior.
 
+`notas listar` muestra una tabla con bordes y columnas alineadas para ID, nombre y fecha UTC. Los nombres largos se ajustan en varias líneas al ancho de la terminal.
+
 ## Instalación en PowerShell
 
 ```powershell

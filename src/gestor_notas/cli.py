@@ -2,6 +2,9 @@ from typing import Annotated
 import httpx
 import typer
 from pydantic import ValidationError
+from rich.console import Console
+from rich.table import Table
+from rich.text import Text
 from .editor import EditorUnavailable, edit_text
 from .models import NoteCreate
 from .selector import SelectionUnavailable, select_note
@@ -66,10 +69,14 @@ def list_notes():
     if not notes:
         typer.echo("No hay notas guardadas.")
         return
-    typer.echo("ID\tNombre\tCreada (UTC)")
+    table = Table(show_lines=True)
+    table.add_column("ID", justify="right", no_wrap=True)
+    table.add_column("Nombre", overflow="fold")
+    table.add_column("Creada (UTC)", no_wrap=True)
     for note in notes:
         name = note["nombre"].replace("\n", " ").replace("\r", " ").replace("\t", " ")
-        typer.echo(f"{note['id']}\t{name}\t{note['creada_en']}")
+        table.add_row(str(note["id"]), Text(name), Text(note["creada_en"]))
+    Console().print(table)
 
 
 @app.command("ver", help="Consultar una nota por ID o buscar por nombre completo o parcial.")
