@@ -24,11 +24,20 @@ def test_real_cli_and_automatic_server(tmp_path, monkeypatch):
     fetched = invoke("ver", "1")
     assert fetched.returncode == 0, fetched.stdout + fetched.stderr
     assert "Persistencia ñ" in fetched.stdout
+    edited = invoke("editar", "1", "--nombre", "Revisada ñ", "--texto", "Nuevo\nContenido")
+    assert edited.returncode == 0, edited.stdout + edited.stderr
+    fetched = invoke("ver", "1")
+    assert fetched.returncode == 0, fetched.stdout + fetched.stderr
+    assert "Revisada ñ" in fetched.stdout
+    assert "Nuevo\nContenido" in fetched.stdout
     assert (tmp_path / "notas.sqlite3").exists()
     with api_client() as client:
         assert client.get("/health").status_code == 200
         listed = invoke("listar")
         assert listed.returncode == 0, listed.stdout + listed.stderr
+        edited = invoke("editar", "1", "--texto", "Servidor existente")
+        assert edited.returncode == 0, edited.stdout + edited.stderr
+        assert client.get("/notas/1").json()["texto"] == "Servidor existente"
         # La CLI debe dejar funcionando el servidor que ya existía.
         assert client.get("/health").status_code == 200
     # TIME_WAIT puede impedir bind aunque ya no exista un servidor.

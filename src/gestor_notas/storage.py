@@ -63,6 +63,22 @@ class Repository:
             row = connection.execute("SELECT * FROM notas WHERE id = ?", (note_id,)).fetchone()
             return dict(row) if row else None
 
+    def update(self, note_id: int, nombre: str, texto: str) -> dict | None:
+        with self.connection() as connection:
+            try:
+                cursor = connection.execute(
+                    "UPDATE notas SET nombre = ?, texto = ? WHERE id = ?",
+                    (nombre, texto, note_id),
+                )
+            except sqlite3.IntegrityError as exc:
+                if "notas.nombre" in str(exc):
+                    raise DuplicateNameError("Ya existe una nota con ese nombre.") from exc
+                raise
+            if cursor.rowcount == 0:
+                return None
+            row = connection.execute("SELECT * FROM notas WHERE id = ?", (note_id,)).fetchone()
+            return dict(row)
+
     def delete(self, note_id: int) -> bool:
         with self.connection() as connection:
             cursor = connection.execute("DELETE FROM notas WHERE id = ?", (note_id,))

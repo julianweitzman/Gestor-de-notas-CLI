@@ -3,6 +3,35 @@ from fastapi.testclient import TestClient
 from gestor_notas.api import create_app
 
 
+def test_update_contract_validation_and_persistence(tmp_path):
+    path = tmp_path / "notes.sqlite3"
+    with TestClient(create_app(path)) as client:
+        original = client.post("/notas", json={"nombre": "Original", "texto": "Antes"}).json()
+        other = client.post("/notas", json={"nombre": "Ocupado", "texto": "Conservar"}).json()
+        url = f"/notas/{original['id']}"
+        payload = {"nombre": "Revisada ñ ' --", "texto": "Una línea\nOtra 😊"}
+        response = client.put(url, json=payload)
+        assert response.status_code == 200
+        updated = {**original, **payload}
+        assert response.json() == updated
+        assert client.get(url).json() == updated
+        assert client.get("/notas", params={"nombre": "Revisada"}).json() == [updated]
+        assert client.put(url, json=payload).json() == updated
+        assert client.put(url, json={**payload, "nombre": "Ocupado"}).status_code == 409
+        for invalid in ({}, {"nombre": "Solo nombre"}, {**payload, "nombre": " "},
+                        {**payload, "texto": "\n\t"}, {**payload, "texto": None},
+                        {**payload, "nombre": 5}):
+            assert client.put(url, json=invalid).status_code == 422
+        assert client.get(url).json() == updated
+        assert client.get(f"/notas/{other['id']}").json() == other
+        assert client.put("/notas/999999", json=payload).status_code == 404
+        for invalid_id in ("0", "-1", "abc"):
+            assert client.put(f"/notas/{invalid_id}", json=payload).status_code == 422
+    with TestClient(create_app(path)) as client:
+        assert client.get(url).json() == updated
+        assert client.get("/notas").json() == [other, updated]
+
+
 def test_persistence_and_contract(tmp_path):
     path = tmp_path / "nested" / "notes.sqlite3"
     with TestClient(create_app(path)) as client:

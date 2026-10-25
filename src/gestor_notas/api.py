@@ -40,6 +40,16 @@ def create_app(db_path: Path | None = None) -> FastAPI:
             raise HTTPException(status_code=404, detail="No existe una nota con ese ID.")
         return note
 
+    @application.put("/notas/{note_id}", response_model=Note)
+    def update_note(data: NoteCreate, note_id: int = PathParameter(gt=0)):
+        try:
+            note = service.update(note_id, data)
+        except DuplicateNameError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        if note is None:
+            raise HTTPException(status_code=404, detail="No existe una nota con ese ID.")
+        return note
+
     @application.delete("/notas/{note_id}", status_code=204)
     def delete_note(note_id: int = PathParameter(gt=0)) -> Response:
         if not service.delete(note_id):

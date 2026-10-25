@@ -61,6 +61,8 @@ notas crear --nombre "Pendiente"
 notas listar
 notas ver 1
 notas ver "Idea"
+notas editar 1
+notas editar 1 --nombre "Idea revisada" --texto "Contenido actualizado"
 notas eliminar 1
 ```
 
@@ -87,10 +89,19 @@ Se guardan `notas.sqlite3` y `servidor.log` en el directorio de datos del usuari
 - `POST /notas`: JSON con `nombre` y `texto`; devuelve la nota con estado 201, o 409 si el nombre ya existe.
 - `GET /notas`: notas completas, desde la más reciente; `?nombre=texto` filtra por nombre completo o parcial sin distinguir mayúsculas.
 - `GET /notas/{id}`: nota completa, o 404 si no existe; IDs no positivos devuelven 422.
+- `PUT /notas/{id}`: reemplaza `nombre` y `texto` (ambos obligatorios) y devuelve la nota con estado 200; 404 si no existe, 409 si el nombre ya está ocupado y 422 para datos inválidos.
 - `DELETE /notas/{id}`: elimina permanentemente la nota y devuelve 204 sin contenido; 404 si no existe y 422 para IDs no positivos.
 - `GET /health`: identidad de aplicación y versión de protocolo.
 
-Cada nota devuelve `id`, `nombre`, `texto` y `creada_en`. No incluye edición ni sincronización.
+Cada nota devuelve `id`, `nombre`, `texto` y `creada_en`. No incluye sincronización.
+
+## Editar notas
+
+`notas editar ID` abre el editor con el texto actual. Ctrl+S o F2 guardan los cambios; Ctrl+C o Ctrl+Q cancelan sin modificar la nota. Podés consultar el ID con `notas listar`.
+
+Usá `notas editar 1 --nombre "Nuevo nombre"` para renombrar conservando el texto, `notas editar 1 --texto "Nuevo contenido"` para cambiar solo el texto, o ambas opciones para cambiar los dos campos sin abrir el editor. El ID y la fecha de creación se conservan. Nombre y texto deben tener contenido y el nombre debe seguir siendo único.
+
+Si ocurre un error de conexión, no se repite automáticamente la edición: consultá `notas ver ID` antes de reintentar. Si tenías `notas servidor` encendido al actualizar, reinicialo para habilitar la edición.
 
 ## Eliminar notas
 

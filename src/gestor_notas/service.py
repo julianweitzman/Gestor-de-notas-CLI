@@ -20,5 +20,9 @@ class NoteService:
         row = self.repository.get(note_id)
         return Note.model_validate(row) if row else None
 
+    def update(self, note_id: int, data: NoteCreate) -> Note | None:
+        row = self.repository.update(note_id, data.nombre, data.texto)
+        return Note.model_validate(row) if row else None
+
     def delete(self, note_id: int) -> bool:
         return self.repository.delete(note_id)

@@ -8,13 +8,13 @@ from rich.text import Text
 from .models import NoteCreate
 from .server import ServerError, api_client
 
-app = typer.Typer(help="Creá, consultá y eliminá tus notas locales.", no_args_is_help=True)
+app = typer.Typer(help="Creá, consultá, editá y eliminá tus notas locales.", no_args_is_help=True)
 
 
-def edit_text() -> str | None:
+def edit_text(initial_text: str = "") -> str | None:
     from .editor import edit_text as run_editor
 
-    return run_editor()
+    return run_editor(initial_text)
 
 
 def select_note(notes: list[dict]) -> dict | None:
@@ -45,6 +45,8 @@ def request(method: str, path: str, **kwargs):
                 message += " La nota podría haberse guardado; consultá 'notas listar' antes de intentar nuevamente."
             elif method == "DELETE":
                 message += " La nota podría haberse eliminado; consultá 'notas listar' para verificarlo."
+            elif method == "PUT":
+                message += " La nota podría haberse editado; consultá 'notas ver' antes de intentar nuevamente."
         typer.echo(f"Error: {message}", err=True)
         raise typer.Exit(1) from exc
 
@@ -130,6 +132,35 @@ def get_note(
         typer.echo("Consulta cancelada.")
         return
     show_note(selected)
+
+
+@app.command("editar", help="Editar una nota por ID; sin opciones, abre el editor con el texto actual.")
+def update_note(
+    note_id: Annotated[int, typer.Argument(min=1, help="ID de la nota que se editará.")],
+    nombre: Annotated[str | None, typer.Option(help="Nuevo nombre; si se omite, conserva el actual.")] = None,
+    texto: Annotated[str | None, typer.Option(help="Nuevo contenido de la nota.")] = None,
+) -> None:
+    note = request("GET", f"/notas/{note_id}")
+    if nombre is None and texto is None:
+        from .editor import EditorUnavailable
+
+        try:
+            texto = edit_text(note["texto"])
+        except EditorUnavailable as exc:
+            typer.echo(f"Error: {exc}", err=True)
+            raise typer.Exit(2) from exc
+        if texto is None:
+            typer.echo("Edición cancelada. No se guardaron cambios.")
+            return
+    try:
+        data = NoteCreate(
+            nombre=nombre if nombre is not None else note["nombre"],
+            texto=texto if texto is not None else note["texto"],
+        )
+    except ValidationError:
+        typer.echo("Error: el nombre y el texto no pueden estar vacíos ni contener solo espacios.", err=True)
+        raise typer.Exit(2)
+    show_note(request("PUT", f"/notas/{note_id}", json=data.model_dump()))
 
 
 @app.command("eliminar", help="Eliminar permanentemente una nota por ID.")
