@@ -1,0 +1,1 @@
+"""Gestor local de notas."""
