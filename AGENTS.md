@@ -2,13 +2,13 @@
 
 ## Estructura y arquitectura
 
-El proyecto requiere Python 3.11 o posterior. El código está en `src/gestor_notas/`: `cli.py` implementa Typer; `api.py`, FastAPI; `models.py`, los modelos Pydantic; `service.py`, la lógica de notas; `storage.py`, SQLite; `server.py`, el ciclo de vida del servidor; y `config.py`, las rutas y configuración.
+El proyecto está migrando a C#. La implementación Python está archivada en `legacy/python/`; las instrucciones de Python de este documento se aplican dentro de esa carpeta. Todavía no hay código C# en esta rama. La versión archivada requiere Python 3.11 o posterior. El código está en `src/gestor_notas/`: `cli.py` implementa Typer; `api.py`, FastAPI; `models.py`, los modelos Pydantic; `service.py`, la lógica de notas; `storage.py`, SQLite; `server.py`, el ciclo de vida del servidor; y `config.py`, las rutas y configuración.
 
 La CLI accede exclusivamente por HTTP a la API. Conservá esta separación: no agregues consultas SQLite a los comandos. Las pruebas están en `tests/`; `pyproject.toml` define dependencias y el comando instalable `notas`. No hay recursos gráficos ni frontend.
 
 ## Instalación y desarrollo
 
-Desde la raíz, en PowerShell:
+Desde `legacy/python/`, en PowerShell:
 
 ```powershell
 python -m venv .venv
