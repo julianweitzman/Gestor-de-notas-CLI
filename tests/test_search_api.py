@@ -26,5 +26,3 @@ def test_legacy_duplicates_are_preserved_and_migration_is_repeatable(tmp_path):
     repository.initialize()
     assert [repository.get(i)['nombre'] for i in range(1, 5)] == ['Idea', 'Idea (3)', 'Idea (2)', 'Idea (4)']
     assert [repository.get(i)['texto'] for i in range(1, 5)] == ['1', '2', '3', '4']
-
-
