@@ -9,15 +9,17 @@ CLI con Typer, API con FastAPI y almacenamiento local SQLite. Requiere Python 3.
 Desde la raíz del proyecto, ejecutá (no requiere permisos de administrador):
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\instalar.ps1
+python -m venv .venv
+.\.venv\Scripts\python -m pip install -e .
+.\.venv\Scripts\notas --help
 ```
 
-El script comprueba Python 3.11 o posterior, crea `.venv` si hace falta, instala la CLI y verifica `notas --help`. Necesita acceso a Internet para descargar dependencias. Podés ejecutarlo de nuevo para actualizar o reparar la instalación. Usa la carpeta del script, incluso si lo llamás desde otro directorio. La instalación es editable: conservá el repositorio en su ubicación.
+Estos comandos crean el entorno virtual, instalan la CLI con sus dependencias y muestran la ayuda. La instalación necesita acceso a Internet para descargar dependencias. La instalación es editable: conservá el repositorio en su ubicación.
 
-Si necesitás elegir una instalación de Python, usá `-Python` (se aplica al crear el entorno):
+Si necesitás elegir una instalación de Python, usá la ruta de su ejecutable al crear el entorno:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\instalar.ps1 -Python "C:\ruta\Python311\python.exe"
+& "C:\ruta\Python311\python.exe" -m venv .venv
 ```
 
 Para usar la CLI sin activar el entorno:
@@ -34,12 +36,12 @@ Set-ExecutionPolicy -Scope Process Bypass
 notas --help
 ```
 
-La política indicada solo afecta a esa sesión. En una terminal nueva necesitás activar el entorno otra vez o usar la ruta completa. El script no modifica el PATH global.
+La política indicada solo afecta a esa sesión. En una terminal nueva necesitás activar el entorno otra vez o usar la ruta completa.
 
 Para desinstalar la CLI de este entorno:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\instalar.ps1 -Accion Desinstalar
+.\.venv\Scripts\python -m pip uninstall gestor-de-tarjetas
 ```
 
 La desinstalación conserva las notas, `.venv` y sus dependencias; no afecta instalaciones realizadas con otro Python o con pipx. Para una instalación anterior, usá el mismo intérprete con el que la instalaste: `python -m pip uninstall gestor-de-tarjetas`. El paquete se llama `gestor-de-tarjetas`, aunque el comando es `notas`. Cerrá primero `notas servidor` si lo tenés ejecutándose.
@@ -90,7 +92,16 @@ Se guardan `notas.sqlite3` y `servidor.log` en el directorio de datos del usuari
 
 Cada nota devuelve `id`, `nombre`, `texto` y `creada_en`. No incluye edición ni sincronización.
 
-`notas eliminar ID` muestra el nombre y pide confirmación (por defecto, no). La eliminación es permanente. Para automatizar, usá `notas eliminar ID --forsar`. Si la nota no existe, el comando informa el error. No se repiten automáticamente las eliminaciones ante errores de conexión.
+## Eliminar notas
+
+```powershell
+notas eliminar 1
+notas eliminar 1 --forsar
+```
+
+`notas eliminar ID` muestra el nombre y pide confirmación: respondé `y` para eliminar o presioná Enter para cancelar. La eliminación es permanente. Para automatizar, usá `--forsar`, escrito de esa forma. El ID es obligatorio y debe ser un entero positivo; podés consultarlo con `notas listar`. Si la nota no existe, el comando informa el error. No se repiten automáticamente las eliminaciones ante errores de conexión; verificá el listado antes de reintentarlas.
+
+Si mantenías `notas servidor` encendido antes de actualizar, reinicialo para habilitar el endpoint de eliminación. Encontrarás más detalles en la [guía de uso](Documentacion.md#5-eliminar-una-nota).
 
 ## Pruebas
 

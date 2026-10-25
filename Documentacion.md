@@ -1,6 +1,6 @@
 # Guía de uso y funcionamiento de la CLI
 
-Este gestor permite crear, listar y consultar notas desde una terminal. Los datos se guardan localmente en SQLite y permanecen disponibles después de cerrar el programa o reiniciar la computadora.
+Este gestor permite crear, listar, consultar y eliminar notas desde una terminal. Los datos se guardan localmente en SQLite y permanecen disponibles después de cerrar el programa o reiniciar la computadora.
 
 ## 1. Instalación
 
@@ -130,17 +130,38 @@ La búsqueda encuentra nombres completos o parciales sin distinguir mayúsculas,
 
 Al abrir una base anterior, los nombres repetidos se migran automáticamente: se conserva el nombre de la nota con menor ID y se agrega ` (2)`, ` (3)`, etc. a las siguientes, evitando nombres ya existentes. No se eliminan notas ni se cambian sus IDs, textos o fechas. Esta migración ocurre una sola vez; si mantenés el servidor encendido, reinicialo para aplicar la actualización.
 
-## 5. Consultar la ayuda
+## 5. Eliminar una nota
+
+Buscá el ID con `listar` y ejecutá:
+
+```powershell
+.\.venv\Scripts\notas eliminar 1
+```
+
+La CLI muestra el ID y el nombre de la nota y pide confirmación. Respondé `y` para eliminarla o presioná Enter para cancelar: la respuesta predeterminada es no. Al confirmar, muestra `Nota 1 eliminada.`. La eliminación es permanente y solo afecta a ese ID; después podés volver a crear una nota con el mismo nombre.
+
+Para eliminar sin pedir confirmación, por ejemplo desde un script:
+
+```powershell
+.\.venv\Scripts\notas eliminar 1 --forsar
+```
+
+La opción se escribe `--forsar`. El ID es obligatorio y debe ser un entero positivo; este comando no busca por nombre. Si la nota no existe, informa el error y termina con código 1. Un argumento inválido termina con código 2; una eliminación correcta o una cancelación mediante la pregunta termina con código 0.
+
+Si falla la conexión, consultá `listar` antes de repetir la operación: la nota podría haberse eliminado aunque no llegara la respuesta. La CLI no reintenta automáticamente la eliminación. Si tenías `notas servidor` abierto antes de actualizar el código, reinicialo para cargar el nuevo endpoint.
+
+## 6. Consultar la ayuda
 
 ```powershell
 .\.venv\Scripts\notas --help
 .\.venv\Scripts\notas crear --help
 .\.venv\Scripts\notas ver --help
+.\.venv\Scripts\notas eliminar --help
 ```
 
 Cada comando acepta `--help` para consultar sus opciones o argumentos.
 
-## 6. Cómo funciona internamente
+## 7. Cómo funciona internamente
 
 El recorrido de una operación es el siguiente:
 
@@ -157,6 +178,8 @@ Typer interpreta los comandos, pregunta el nombre omitido y abre el editor cuand
 Después de confirmar, la CLI valida los datos con Pydantic y envía nombre y texto a la API. La API vuelve a validar la entrada, genera la fecha UTC y utiliza el servicio y el repositorio para guardar la nota mediante una consulta SQL parametrizada. SQLite asigna el ID. La respuesta vuelve a la CLI, que la presenta en la terminal. Cancelar el editor no inicia la API ni envía una solicitud de creación.
 
 La CLI nunca consulta directamente la base de datos. La API atiende únicamente en `http://127.0.0.1:8000` y no requiere conexión a Internet para las operaciones de notas.
+
+Para eliminar, la CLI consulta primero la nota por HTTP para mostrar su nombre y pedir confirmación; con `--forsar` omite esa consulta y la pregunta. Después envía `DELETE /notas/{note_id}`. El servicio delega en el repositorio, que ejecuta una consulta SQL parametrizada. La API devuelve 204 sin contenido si eliminó la nota, 404 si no existía y 422 si el ID no es válido.
 
 ### Inicio automático del servidor
 
@@ -184,9 +207,10 @@ Dejá esa terminal abierta y usá los comandos de notas en otra. Detené el serv
 | `POST` | `/notas` | Crear una nota con `nombre` y `texto`; devuelve estado 201, o 409 si el nombre ya existe. |
 | `GET` | `/notas` | Obtener las notas completas, desde la más reciente; `?nombre=texto` filtra por nombre sin distinguir mayúsculas. |
 | `GET` | `/notas/{note_id}` | Consultar una nota; devuelve 404 si no existe. |
+| `DELETE` | `/notas/{note_id}` | Eliminar una nota; devuelve 204 sin contenido, 404 si no existe o 422 si el ID no es un entero positivo. |
 | `GET` | `/health` | Consultar la identidad y la versión del protocolo. |
 
-## 7. Dónde se guardan los datos
+## 8. Dónde se guardan los datos
 
 El proyecto utiliza `platformdirs` para elegir el directorio de datos del usuario. En Windows normalmente es:
 
@@ -216,7 +240,7 @@ Si mantenés la API encendida manualmente, configurá la misma variable en ambas
 
 Para realizar un respaldo, detené el servidor y copiá `notas.sqlite3`. Para restaurarlo, con el servidor detenido, colocá la copia en el directorio de datos elegido.
 
-## 8. Problemas frecuentes
+## 9. Problemas frecuentes
 
 | Problema | Qué hacer |
 | --- | --- |
@@ -228,14 +252,15 @@ Para realizar un respaldo, detené el servidor y copiá `notas.sqlite3`. Para re
 | Puerto 8000 ocupado o versión incompatible. | Revisá qué servicio está usando el puerto; la CLI no lo detiene. El puerto no tiene una opción de configuración en esta versión. |
 | La API no inicia o tarda demasiado. | Consultá la ruta del registro indicada en el error y ejecutá `servidor` manualmente para ver su salida. |
 | Falló la conexión durante una creación. | Consultá `listar` antes de repetirla: la nota podría haberse guardado aunque no llegara la respuesta. La CLI no reintenta esa creación automáticamente. |
+| Falló la conexión durante una eliminación. | Consultá `listar` para verificar si la nota todavía existe antes de repetirla. La CLI no reintenta esa eliminación automáticamente. |
 | No aparecen notas guardadas anteriormente. | Verificá `NOTAS_DATA_DIR` y la ubicación usada por el servidor que está encendido. |
 
-## 9. Alcance actual
+## 10. Alcance actual
 
-La aplicación está pensada para uso local de una persona. Permite crear, listar y consultar notas; todavía no incluye edición, eliminación ni sincronización. La API no tiene autenticación y escucha en la dirección local `127.0.0.1`.
+La aplicación está pensada para uso local de una persona. Permite crear, listar, consultar y eliminar notas; todavía no incluye edición ni sincronización. La API no tiene autenticación y escucha en la dirección local `127.0.0.1`.
 
 
-## 10. Ejecutar las pruebas
+## 11. Ejecutar las pruebas
 
 Instalá las dependencias de prueba y ejecutá pytest desde la raíz:
 
