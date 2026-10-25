@@ -4,24 +4,23 @@ Este gestor permite crear, listar, consultar y eliminar notas desde una terminal
 
 ## 1. Instalación
 
-Necesitás Python 3.11 o posterior. Abrí PowerShell en la carpeta del proyecto y ejecutá:
+Necesitás Python 3.11 o posterior y el SDK de .NET 10. Abrí PowerShell en la carpeta del proyecto y ejecutá:
 
 ```powershell
-python -m venv .venv
-.\.venv\Scripts\python -m pip install -e .
-.\.venv\Scripts\notas --help
+.\instalar.ps1
+.\.publish\windows\notas.exe --help
 ```
 
-El primer comando crea un entorno virtual y el segundo instala el proyecto con sus dependencias. La opción `-e` permite que los cambios del código se reflejen sin reinstalarlo.
+El instalador prepara el entorno Python del backend y publica la CLI C# con runtime incluido. Los cambios Python se reflejan al reiniciar la API; los cambios C# requieren recompilar.
 
-Los ejemplos siguientes usan la ruta del ejecutable para que no sea necesario activar el entorno virtual. Ejecutalos desde la raíz del proyecto. Si activás el entorno, podés reemplazar `.\.venv\Scripts\notas` por `notas`.
+Los ejemplos siguientes usan la ruta del ejecutable para que no sea necesario activar el entorno virtual. Ejecutalos desde la raíz del proyecto. Si agregás `.publish\windows` al PATH, podés usar `notas`.
 
 ## 2. Crear una nota
 
 ### Pasar todos los datos en el comando
 
 ```powershell
-.\.venv\Scripts\notas crear --nombre "Compras" --texto "Comprar pan y leche"
+.\.publish\windows\notas.exe crear --nombre "Compras" --texto "Comprar pan y leche"
 ```
 
 La CLI muestra la nota guardada. Ejemplo ilustrativo:
@@ -39,7 +38,7 @@ El ID y la fecha reales se generan automáticamente. La fecha está en UTC, por 
 ### Ingresar los datos mediante preguntas
 
 ```powershell
-.\.venv\Scripts\notas crear
+.\.publish\windows\notas.exe crear
 ```
 
 La CLI solicita `Nombre`. Escribilo y presioná Enter. Después abre un editor de texto en la terminal para escribir el contenido. Enter agrega una línea; para enviar el contenido completo usá Ctrl+S o F2.
@@ -47,7 +46,7 @@ La CLI solicita `Nombre`. Escribilo y presioná Enter. Después abre un editor d
 También podés combinar ambas formas:
 
 ```powershell
-.\.venv\Scripts\notas crear --nombre "Pendientes"
+.\.publish\windows\notas.exe crear --nombre "Pendientes"
 ```
 
 En ese caso, abre directamente el editor de texto. Si proporcionás únicamente `--texto`, solo pregunta el nombre y no abre el editor.
@@ -57,10 +56,10 @@ En ese caso, abre directamente el editor de texto. Si proporcionás únicamente 
 No necesitás preparar una variable de PowerShell. Ejecutá:
 
 ```powershell
-.\.venv\Scripts\notas crear --nombre "Tareas"
+.\.publish\windows\notas.exe crear --nombre "Tareas"
 ```
 
-El editor ocupa la terminal y muestra números de línea, la posición del cursor y los atajos. Podés escribir directamente y volver a cualquier línea para corregirla.
+El editor ocupa la terminal y muestra la posición del cursor y los atajos. Podés escribir directamente y volver a cualquier línea para corregirla.
 
 | Tecla | Acción |
 | --- | --- |
@@ -83,7 +82,7 @@ Primera tarea
 Segunda tarea
 Tercera tarea
 '@
-.\.venv\Scripts\notas crear --nombre "Tareas" --texto $contenidoNota
+.\.publish\windows\notas.exe crear --nombre "Tareas" --texto $contenidoNota
 ```
 
 ### Reglas de las notas
@@ -96,7 +95,7 @@ Tercera tarea
 ## 3. Listar las notas
 
 ```powershell
-.\.venv\Scripts\notas listar
+.\.publish\windows\notas.exe listar
 ```
 
 Muestra ID, nombre y fecha de creación, desde la nota más reciente. El listado no muestra el contenido completo. Si no hay notas, aparece:
@@ -110,7 +109,7 @@ No hay notas guardadas.
 Usá el ID obtenido al crear la nota o al listar las existentes:
 
 ```powershell
-.\.venv\Scripts\notas ver 1
+.\.publish\windows\notas.exe ver 1
 ```
 
 Muestra ID, nombre, fecha y texto completo. Reemplazá `1` por el ID que corresponda. Si no existe, se informa el error; el ID debe ser un entero mayor que cero.
@@ -135,7 +134,7 @@ Al abrir una base anterior, los nombres repetidos se migran automáticamente: se
 Buscá el ID con `listar` y ejecutá:
 
 ```powershell
-.\.venv\Scripts\notas eliminar 1
+.\.publish\windows\notas.exe eliminar 1
 ```
 
 La CLI muestra el ID y el nombre de la nota y pide confirmación. Respondé `y` para eliminarla o presioná Enter para cancelar: la respuesta predeterminada es no. Al confirmar, muestra `Nota 1 eliminada.`. La eliminación es permanente y solo afecta a ese ID; después podés volver a crear una nota con el mismo nombre.
@@ -143,7 +142,7 @@ La CLI muestra el ID y el nombre de la nota y pide confirmación. Respondé `y` 
 Para eliminar sin pedir confirmación, por ejemplo desde un script:
 
 ```powershell
-.\.venv\Scripts\notas eliminar 1 --forsar
+.\.publish\windows\notas.exe eliminar 1 --forsar
 ```
 
 La opción se escribe `--forsar`. El ID es obligatorio y debe ser un entero positivo; este comando no busca por nombre. Si la nota no existe, informa el error y termina con código 1. Un argumento inválido termina con código 2; una eliminación correcta o una cancelación mediante la pregunta termina con código 0.
@@ -153,10 +152,10 @@ Si falla la conexión, consultá `listar` antes de repetir la operación: la not
 ## 6. Consultar la ayuda
 
 ```powershell
-.\.venv\Scripts\notas --help
-.\.venv\Scripts\notas crear --help
-.\.venv\Scripts\notas ver --help
-.\.venv\Scripts\notas eliminar --help
+.\.publish\windows\notas.exe --help
+.\.publish\windows\notas.exe crear --help
+.\.publish\windows\notas.exe ver --help
+.\.publish\windows\notas.exe eliminar --help
 ```
 
 Cada comando acepta `--help` para consultar sus opciones o argumentos.
@@ -166,16 +165,16 @@ Cada comando acepta `--help` para consultar sus opciones o argumentos.
 El recorrido de una operación es el siguiente:
 
 ```text
-Terminal → CLI (Typer) → HTTP (HTTPX) → API (FastAPI)
+Terminal → CLI (C#) → HTTP (HttpClient) → API (FastAPI)
                                          ↓
                                   Servicio de notas
                                          ↓
                                   SQLite local
 ```
 
-Typer interpreta los comandos, pregunta el nombre omitido y abre el editor cuando falta el texto. El editor de `editor.py` usa `prompt_toolkit` y devuelve una cadena al confirmar o `None` al cancelar. No accede a HTTP ni a SQLite. Su función `edit_text(initial_text="", title="Texto de la nota")` admite contenido inicial para reutilizarla en una futura edición de notas; esta versión todavía no incluye un comando de edición.
+System.CommandLine interpreta los comandos. Spectre.Console presenta tablas, preguntas y selección. Terminal.Gui implementa el editor, que devuelve el texto al confirmar o una cancelación. No accede a HTTP ni a SQLite. `editar` reutiliza el editor con el contenido actual.
 
-Después de confirmar, la CLI valida los datos con Pydantic y envía nombre y texto a la API. La API vuelve a validar la entrada, genera la fecha UTC y utiliza el servicio y el repositorio para guardar la nota mediante una consulta SQL parametrizada. SQLite asigna el ID. La respuesta vuelve a la CLI, que la presenta en la terminal. Cancelar el editor no inicia la API ni envía una solicitud de creación.
+Después de confirmar, la CLI valida que nombre y texto no estén vacíos y envía nombre y texto a la API. La API vuelve a validar la entrada, genera la fecha UTC y utiliza el servicio y el repositorio para guardar la nota mediante una consulta SQL parametrizada. SQLite asigna el ID. La respuesta vuelve a la CLI, que la presenta en la terminal. Cancelar el editor no inicia la API ni envía una solicitud de creación.
 
 La CLI nunca consulta directamente la base de datos. La API atiende únicamente en `http://127.0.0.1:8000` y no requiere conexión a Internet para las operaciones de notas.
 
@@ -186,7 +185,7 @@ Para eliminar, la CLI consulta primero la nota por HTTP para mostrar su nombre y
 Antes de operar, la CLI consulta `/health` para comprobar la identidad y la versión del servicio:
 
 1. Si la API ya está encendida y es compatible, la reutiliza y la deja funcionando.
-2. Si no está disponible, inicia Uvicorn con el mismo intérprete Python, sin abrir otra ventana en Windows.
+2. Si no está disponible, inicia Uvicorn con el Python del backend instalado, sin abrir otra ventana en Windows.
 3. Espera hasta 10 segundos a que el servidor esté disponible y ejecuta la operación.
 4. Al terminar, incluso ante un error o una interrupción normal con Ctrl+C, cierra únicamente el proceso que inició para ese comando.
 
@@ -197,7 +196,7 @@ Cerrar la API no elimina las notas: ya están guardadas en el archivo SQLite.
 Para evitar iniciar un servidor en cada operación, ejecutá en una terminal:
 
 ```powershell
-.\.venv\Scripts\notas servidor
+.\.publish\windows\notas.exe servidor
 ```
 
 Dejá esa terminal abierta y usá los comandos de notas en otra. Detené el servidor con Ctrl+C en la primera terminal. Mientras esté encendido, podés abrir `http://127.0.0.1:8000/docs` para consultar y probar los endpoints.
@@ -221,7 +220,7 @@ El proyecto utiliza `platformdirs` para elegir el directorio de datos del usuari
 Los archivos son:
 
 - `notas.sqlite3`: base de datos con las notas.
-- `servidor.log`: salida y errores de los servidores iniciados automáticamente. El servidor manual muestra su salida en la terminal.
+- `servidor.log`: salida y errores de los servidores iniciados automáticamente. El servidor manual también registra su salida en ese archivo.
 
 Podés consultar las rutas que utiliza tu instalación:
 
@@ -233,7 +232,7 @@ Para elegir otra carpeta, configurá una ruta absoluta antes de ejecutar los com
 
 ```powershell
 $env:NOTAS_DATA_DIR = "C:\MisNotas"
-.\.venv\Scripts\notas listar
+.\.publish\windows\notas.exe listar
 ```
 
 Si mantenés la API encendida manualmente, configurá la misma variable en ambas terminales y reiniciá el servidor para cambiar su ubicación. La base utilizada siempre es la que abrió el servidor. Cambiar esta variable no mueve las notas anteriores: selecciona otra ubicación de almacenamiento.
@@ -244,13 +243,13 @@ Para realizar un respaldo, detené el servidor y copiá `notas.sqlite3`. Para re
 
 | Problema | Qué hacer |
 | --- | --- |
-| No se encuentra `notas`. | Usá `.\.venv\Scripts\notas` desde la raíz del proyecto y comprobá que realizaste la instalación. |
+| No se encuentra `notas`. | Usá `.\.publish\windows\notas.exe` desde la raíz del proyecto y comprobá que realizaste la instalación. |
 | Nombre o texto vacío. | Ingresá contenido que no sea solamente espacios. |
 | El editor necesita una terminal interactiva. | Ejecutá el comando directamente en una terminal o pasá `--nombre` y `--texto` para automatizar. |
 | Ctrl+S no envía el texto. | Usá F2; algunas terminales reservan Ctrl+S. |
 | No existe una nota con ese ID. | Ejecutá `listar` y verificá el ID. |
 | Puerto 8000 ocupado o versión incompatible. | Revisá qué servicio está usando el puerto; la CLI no lo detiene. El puerto no tiene una opción de configuración en esta versión. |
-| La API no inicia o tarda demasiado. | Consultá la ruta del registro indicada en el error y ejecutá `servidor` manualmente para ver su salida. |
+| La API no inicia o tarda demasiado. | Consultá la ruta del registro indicada en el error y ejecutá `servidor` y consultá `servidor.log`. |
 | Falló la conexión durante una creación. | Consultá `listar` antes de repetirla: la nota podría haberse guardado aunque no llegara la respuesta. La CLI no reintenta esa creación automáticamente. |
 | Falló la conexión durante una eliminación. | Consultá `listar` para verificar si la nota todavía existe antes de repetirla. La CLI no reintenta esa eliminación automáticamente. |
 | No aparecen notas guardadas anteriormente. | Verificá `NOTAS_DATA_DIR` y la ubicación usada por el servidor que está encendido. |
@@ -265,8 +264,11 @@ La aplicación está pensada para uso local de una persona. Permite crear, lista
 Instalá las dependencias de prueba y ejecutá pytest desde la raíz:
 
 ```powershell
-.\.venv\Scripts\python -m pip install -e ".[test]"
+.\instalar.ps1 -Pruebas
+dotnet test cli/Notas.Cli.Tests
 .\.venv\Scripts\python -m pytest -q -p no:cacheprovider --basetemp=.test-tmp-local
 ```
 
 Esta variante crea las bases de prueba dentro del proyecto y evita depender de los permisos de la carpeta temporal del sistema. No modifica las notas personales. Reservá `.test-tmp-local` exclusivamente para pytest: su contenido se elimina al reutilizarla. Las carpetas `.test-tmp-*` no se incluyen en Git.
+
+La configuración de NOTAS_PYTHON, la actualización desde Python y la publicación Native AOT se describen en [README.md](README.md).

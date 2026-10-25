@@ -9,3 +9,7 @@ dist/
 *.log
 
 .test-tmp-*/
+**/bin/
+**/obj/
+TestResults/
+.publish/

@@ -1,159 +1,150 @@
 # Gestor de notas
 
-CLI con Typer, API con FastAPI y almacenamiento local SQLite. Requiere Python 3.11 o posterior.
+CLI en C# (.NET 10), API con FastAPI (Python 3.11+) y almacenamiento local SQLite. La CLI usa System.CommandLine, Spectre.Console y Terminal.Gui; se comunica exclusivamente por HTTP con el backend.
 
-`notas listar` muestra una tabla con bordes y columnas alineadas para ID, nombre y fecha UTC. Los nombres largos se ajustan en varias líneas al ancho de la terminal.
+## Instalación en Windows x64
 
-## Instalación en PowerShell
-
-Desde la raíz del proyecto, ejecutá (no requiere permisos de administrador):
+Necesitás Python 3.11+, el SDK de .NET 10 y acceso a Internet para instalar y publicar. Desde PowerShell en la raíz del proyecto:
 
 ```powershell
-python -m venv .venv
-.\.venv\Scripts\python -m pip install -e .
-.\.venv\Scripts\notas --help
+.\instalar.ps1
+.\.publish\windows\notas.exe --help
 ```
 
-Estos comandos crean el entorno virtual, instalan la CLI con sus dependencias y muestran la ayuda. La instalación necesita acceso a Internet para descargar dependencias. La instalación es editable: conservá el repositorio en su ubicación.
+El instalador crea `.venv`, instala el backend en modo editable y publica la CLI Release con runtime incluido en `.publish\windows`. Para usar el ejecutable publicado no hace falta instalar .NET ni activar el entorno virtual. Python sigue siendo necesario para el backend. Conservá el repositorio y el entorno en su ubicación.
 
-Si necesitás elegir una instalación de Python, usá la ruta de su ejecutable al crear el entorno:
+La carpeta publicada se agrega al PATH de la terminal actual. En otras terminales usí la ruta completa o agregá esa carpeta a tu PATH. Para elegir Python:
 
 ```powershell
-& "C:\ruta\Python311\python.exe" -m venv .venv
+.\instalar.ps1 -Python 'C:\ruta\python.exe'
 ```
 
-Para usar la CLI sin activar el entorno:
+Para instalar también las herramientas de prueba:
 
 ```powershell
-.\.venv\Scripts\notas.exe listar
+.\instalar.ps1 -Pruebas
 ```
 
-Para habilitar `notas` en la terminal actual:
+Para desinstalar la publicación y el entorno de este proyecto:
 
 ```powershell
-Set-ExecutionPolicy -Scope Process Bypass
-.\.venv\Scripts\Activate.ps1
-notas --help
+.\instalar.ps1 -Accion Desinstalar
 ```
 
-La política indicada solo afecta a esa sesión. En una terminal nueva necesitás activar el entorno otra vez o usar la ruta completa.
+Cerrá primero los comandos y servidores iniciados desde esta instalación. La desinstalación conserva las notas y registros externos al repositorio.
 
-Para desinstalar la CLI de este entorno:
+### Actualización desde la CLI Python
 
-```powershell
-.\.venv\Scripts\python -m pip uninstall gestor-de-tarjetas
-```
+El paquete Python ya no registra un comando `notas`: el instalador publica el ejecutable C#. Si tenías una instalación anterior en otro entorno o con pipx, desinstalala con la herramienta correspondiente o usí la ruta completa de la CLI nueva para evitar confundir ambos comandos. No hace falta migrar la base SQLite.
 
-La desinstalación conserva las notas, `.venv` y sus dependencias; no afecta instalaciones realizadas con otro Python o con pipx. Para una instalación anterior, usá el mismo intérprete con el que la instalaste: `python -m pip uninstall gestor-de-tarjetas`. El paquete se llama `gestor-de-tarjetas`, aunque el comando es `notas`. Cerrá primero `notas servidor` si lo tenés ejecutándose.
+## Comandos
 
-Para desarrollo y pruebas, después de instalar:
+Los ejemplos suponen que `notas` está en el PATH; también podés usar `.\.publish\windows\notas.exe`.
 
 ```powershell
-.\.venv\Scripts\python -m pip install -e ".[test]"
-```
-
-Con el entorno activado, los ejemplos se ejecutan directamente como `notas`:
-
-```powershell
-notas crear --nombre "Idea" --texto "Preparar el proyecto"
+notas crear --nombre "Idea" --texto "Contenido"
 notas crear
-notas crear --nombre "Pendiente"
 notas listar
 notas ver 1
 notas ver "Idea"
+notas ver --nombre "123"
 notas editar 1
-notas editar 1 --nombre "Idea revisada" --texto "Contenido actualizado"
+notas editar "Idea" --texto "Contenido actualizado"
+notas editar --buscar-nombre "123" --nombre "Nombre nuevo"
 notas eliminar 1
-```
-
-Si omitís el nombre, la CLI lo pregunta. Si omitís `--texto`, abre un editor de terminal con varias líneas: Enter agrega una línea, las flechas permiten moverse y Retroceso/Supr borran caracteres. Podés volver a líneas anteriores y corregirlas. Ctrl+S o F2 envían el contenido; Ctrl+C o Ctrl+Q cancelan sin guardar. Los atajos aparecen en pantalla. `--texto` sigue disponible para automatizar y no abre el editor.
-
-Nombre y texto no pueden estar vacíos ni contener solo espacios. Los nombres son únicos (se distinguen mayúsculas y espacios). El ID es automático y la fecha de creación se guarda en UTC.
-
-La CLI accede exclusivamente por HTTP a `127.0.0.1:8000`. Si la API no está encendida, la inicia sin abrir otra ventana y la cierra al terminar el comando, también ante errores. Si ya está encendida, la reutiliza y la deja funcionando. No se repiten automáticamente las creaciones ante errores de conexión.
-
-Para mantener la API encendida, ejecutá en otra terminal:
-
-```powershell
+notas eliminar 1 --forsar
 notas servidor
 ```
 
-Detenela con Ctrl+C. Documentación HTTP: http://127.0.0.1:8000/docs mientras está encendida. No incluye autenticación y está pensada para uso local de una persona.
+- `crear`: pregunta el nombre cuando falta; sin `--texto` abre el editor multilínea.
+- `listar`: muestra ID, nombre y fecha UTC en una tabla, desde la nota más reciente.
+- `ver [referencia] [--nombre NOMBRE]`: interpreta referencias numéricas como IDs; el resto busca por nombre completo o parcial. `--nombre` permite buscar un nombre numérico. Sin referencia pregunta la búsqueda.
+- `editar [referencia] [--buscar-nombre BUSQUEDA] [--nombre NUEVO] [--texto TEXTO]`: conserva los campos omitidos. Sin nuevo nombre ni texto abre el editor con el contenido actual.
+- `eliminar ID`: pide confirmación negativa por defecto; acepta `s`, `sí` o `y`. `--forsar` conserva la opción existente y omite la confirmación.
+- `servidor`: inicia la API y la mantiene hasta Ctrl+C. Si ya existe un servidor compatible, informa su dirección y lo deja funcionando.
 
-## Archivos locales
+Cada comando acepta `--help`. Los errores de argumentos o validación devuelven código 2; los errores HTTP o de servidor devuelven 1; el éxito y la cancelación voluntaria devuelven 0.
 
-Se guardan `notas.sqlite3` y `servidor.log` en el directorio de datos del usuario obtenido con `platformdirs` para `gestor-notas` (en Windows, normalmente `%LOCALAPPDATA%\gestor-notas`). No dependen del directorio de trabajo. Podés elegir otra ubicación con `NOTAS_DATA_DIR`; iniciá servidor y CLI con la misma configuración. Para respaldar las notas, detené la API y copiá el archivo SQLite.
+### Editor y selección
 
-## API
+El editor Terminal.Gui permite escribir varias líneas, moverse con flechas y borrar con Retroceso/Supr. Ctrl+S o F2 aceptan el texto; Ctrl+C o Ctrl+Q cancelan sin guardar. Muestra los atajos y la posición del cursor. Conserva los caracteres Unicode y usa saltos de línea LF al aceptar.
 
-- `POST /notas`: JSON con `nombre` y `texto`; devuelve la nota con estado 201, o 409 si el nombre ya existe.
-- `GET /notas`: notas completas, desde la más reciente; `?nombre=texto` filtra por nombre completo o parcial sin distinguir mayúsculas.
-- `GET /notas/{id}`: nota completa, o 404 si no existe; IDs no positivos devuelven 422.
-- `PUT /notas/{id}`: reemplaza `nombre` y `texto` (ambos obligatorios) y devuelve la nota con estado 200; 404 si no existe, 409 si el nombre ya está ocupado y 422 para datos inválidos.
-- `DELETE /notas/{id}`: elimina permanentemente la nota y devuelve 204 sin contenido; 404 si no existe y 422 para IDs no positivos.
-- `GET /health`: identidad de aplicación y versión de protocolo.
+Cuando una búsqueda encuentra varias notas, Spectre.Console permite elegir con flechas y Enter; Esc o Ctrl+C cancelan. El editor y el selector requieren entrada y salida de terminal interactivas. Para scripts usí `--texto` y referencias por ID. Si una búsqueda es ambigua con salida redirigida, el error incluye los IDs disponibles.
 
-Cada nota devuelve `id`, `nombre`, `texto` y `creada_en`. No incluye sincronización.
+Nombre y texto no pueden estar vacíos ni contener solo espacios. Los nombres son únicos; se distinguen mayúsculas y espacios. La búsqueda parcial ignora mayúsculas y trata `%` y `_` como texto literal.
 
-## Editar notas
+## Servidor y datos
 
-`notas editar ID` abre el editor con el texto actual. Ctrl+S o F2 guardan los cambios; Ctrl+C o Ctrl+Q cancelan sin modificar la nota. Podés consultar el ID con `notas listar`.
+La CLI accede a `http://127.0.0.1:8000`. Antes de la primera solicitud de cada comando verifica `/health`: exige aplicación `gestor-notas` y protocolo 1. Si hace falta, inicia Uvicorn sin ventana, espera hasta 10 segundos y cierra su proceso al finalizar, incluso ante errores o Ctrl+C. Reutiliza una sola sesión para todas las solicitudes del comando. Nunca detiene un servidor existente.
 
-También podés buscar por nombre completo o parcial, sin distinguir mayúsculas. Si hay varias coincidencias, elegí con las flechas y Enter; Esc o Ctrl+C cancelan sin guardar. Sin referencia, el comando pregunta qué nombre buscar. Para nombres numéricos, usá `--buscar-nombre`; `--nombre` sigue indicando el nuevo nombre de la nota.
+Para evitar el costo de iniciar Python con cada comando, mantené `notas servidor` abierto en otra terminal. La documentación HTTP está en `http://127.0.0.1:8000/docs`. La API solo escucha en la dirección local y no tiene autenticación.
 
-```powershell
-notas editar "Compras"
-notas editar "comp" --texto "Lista actualizada"
-notas editar --buscar-nombre "123"
-notas editar
-notas editar "Compras" --nombre "Compras semanales"
-```
-
-Usá `notas editar 1 --nombre "Nuevo nombre"` para renombrar conservando el texto, `notas editar 1 --texto "Nuevo contenido"` para cambiar solo el texto, o ambas opciones para cambiar los dos campos sin abrir el editor. El ID y la fecha de creación se conservan. Nombre y texto deben tener contenido y el nombre debe seguir siendo único.
-
-El editor permite escribir directamente y moverse con las flechas, igual que al crear una nota. En scripts sin terminal, usá `--texto` y un ID si hay varias coincidencias.
-
-Si ocurre un error de conexión, no se repite automáticamente la edición: consultá `notas ver ID` antes de reintentar. Si tenías `notas servidor` encendido al actualizar, reinicialo para habilitar la edición.
-
-## Eliminar notas
+Los datos se guardan en `%LOCALAPPDATA%\gestor-notas`: `notas.sqlite3` y `servidor.log`. También el servidor en primer plano registra su salida en ese archivo. Para seleccionar otra ubicación:
 
 ```powershell
-notas eliminar 1
-notas eliminar 1 --forsar
+$env:NOTAS_DATA_DIR = 'C:\Mis notas'
+notas listar
 ```
 
-`notas eliminar ID` muestra el nombre y pide confirmación: respondé `y` para eliminar o presioná Enter para cancelar. La eliminación es permanente. Para automatizar, usá `--forsar`, escrito de esa forma. El ID es obligatorio y debe ser un entero positivo; podés consultarlo con `notas listar`. Si la nota no existe, el comando informa el error. No se repiten automáticamente las eliminaciones ante errores de conexión; verificá el listado antes de reintentarlas.
+Configurá esa variable antes de iniciar el servidor. Cambiarla en una CLI no cambia la base de un servidor que ya está funcionando. Para respaldar o restaurar, detené la API y copiá el archivo SQLite.
 
-Si mantenías `notas servidor` encendido antes de actualizar, reinicialo para habilitar el endpoint de eliminación. Encontrarás más detalles en la [guía de uso](Documentacion.md#5-eliminar-una-nota).
+El instalador guarda la ruta del intérprete en `backend-python.txt`, junto al ejecutable. `NOTAS_PYTHON` permite reemplazarla por una ruta absoluta. En desarrollo también se reconoce `.venv` en la raíz del proyecto. La CLI nunca consulta SQLite directamente ni reintenta escrituras: ante una respuesta incierta, consultá las notas antes de repetir la operación.
 
-## Pruebas
+## Contrato HTTP conservado
+
+| Operación | Endpoint | Resultado |
+|---|---|---|
+| Salud | `GET /health` | Identidad y protocolo |
+| Crear | `POST /notas` | 201 con la nota |
+| Listar/buscar | `GET /notas?nombre=texto` | Lista de notas completas |
+| Consultar | `GET /notas/{id}` | Nota o 404 |
+| Editar | `PUT /notas/{id}` | Reemplaza nombre y texto; 200 con la nota |
+| Eliminar | `DELETE /notas/{id}` | 204 sin contenido |
+
+Las notas tienen `id`, `nombre`, `texto` y `creada_en`. Crear y editar reciben `nombre` y `texto`. Un nombre repetido devuelve 409; datos inválidos devuelven 422.
+
+## Desarrollo y pruebas
 
 ```powershell
-.\.venv\Scripts\python -m pytest
+.\instalar.ps1 -Pruebas
+dotnet test cli/Notas.Cli.Tests
+.\.venv\Scripts\python -m pytest -q --basetemp=.test-tmp-local
 ```
 
-Las pruebas usan directorios temporales y no modifican las notas del usuario.
+Las pruebas Python incluyen los contratos HTTP, persistencia y el ejecutable C# publicado. `NOTAS_CLI` permite probar otra publicación. Las pruebas que necesitan el puerto 8000 se omiten si está ocupado. Las pruebas históricas de la CLI Python se conservan como referencia de comportamiento; sus dependencias solo se instalan con `[test]`, y esa CLI ya no se distribuye como comando.
 
-Si pytest no puede acceder a la carpeta temporal del sistema, ejecutalo desde la raíz con una carpeta temporal del proyecto y sin caché:
+Para iterar sin publicar:
 
 ```powershell
-.\.venv\Scripts\python -m pytest -q -p no:cacheprovider --basetemp=.test-tmp-local
+dotnet run --project cli/Notas.Cli -- listar
 ```
 
-Reservá `.test-tmp-local` para las pruebas: pytest elimina su contenido al reutilizarla. Las carpetas `.test-tmp-*` quedan excluidas de Git.
+Los cambios del backend editable se reflejan al reiniciar la API; los de C# requieren recompilar. Las versiones NuGet se fijan en `packages.lock.json`.
 
+### Native AOT
 
-## Buscar por nombre y seleccionar
+La publicación predeterminada es convencional, con runtime incluido. Se comprobó que Native AOT compila, pero Terminal.Gui 1.19 emite advertencias de trimming y AOT: no se lo adopta como publicación predeterminada sin validar el editor completo. Para experimentar necesitás las herramientas C++ de Visual Studio:
 
 ```powershell
-notas ver "Compras"
-notas ver "comp"
-notas ver --nombre "123"
-notas ver
+.\instalar.ps1 -NativeAot
 ```
 
-La búsqueda encuentra nombres completos o parciales sin distinguir mayúsculas, incluidos caracteres Unicode. Sin argumento, pregunta qué nombre buscar. Una coincidencia se abre directamente; con varias, muestra una lista: usá las flechas arriba/abajo y Enter para abrir la seleccionada. Ctrl+C o Esc cierran la consulta. En scripts, usá el ID si hay varias coincidencias. `notas ver 1` sigue funcionando; `--nombre` permite buscar nombres numéricos.
+Esa opción reemplaza la publicación normal. Para volver, ejecutá el instalador sin `-NativeAot`.
 
-`GET /notas?nombre=texto` filtra por nombre; sin filtro sigue listando todas las notas. Crear un nombre repetido devuelve HTTP 409 y un mensaje en la CLI. SQLite garantiza la unicidad incluso ante creaciones simultáneas.
+Para comparar arranques con la referencia Python instalada mediante `[test]`:
 
-Al abrir una base anterior, los nombres repetidos se migran automáticamente: se conserva el nombre de la nota con menor ID y se agrega ` (2)`, ` (3)`, etc. a las siguientes, evitando nombres ya existentes. No se eliminan notas ni se cambian sus IDs, textos o fechas. Esta migración ocurre una sola vez; si mantenés el servidor encendido, reinicialo para aplicar la actualización.
+```powershell
+.\.venv\Scripts\python tools/benchmark_cli.py
+```
+
+El informe distingue ayuda y listado con API encendida y apagada, y usa datos temporales.
+
+Medianas de cinco ejecuciones en Windows x64, Python 3.13 y .NET 10 (25/10/2026), sin otras compilaciones simultáneas:
+
+| Operación | CLI Python | CLI C# |
+|---|---:|---:|
+| Ayuda | 1703 ms | 308 ms |
+| Listar con API encendida | 1647 ms | 450 ms |
+| Listar iniciando y cerrando la API | 3762 ms | 2769 ms |
+
+Estos tiempos dependen del equipo. Mantener la API encendida evita el costo de iniciar el backend Python.

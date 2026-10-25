@@ -15,7 +15,10 @@ def test_real_cli_and_automatic_server(tmp_path, monkeypatch):
         if probe.connect_ex(("127.0.0.1", 8000)) == 0:
             pytest.skip("El puerto 8000 tiene un servicio activo")
     monkeypatch.setenv("NOTAS_DATA_DIR", str(tmp_path))
-    executable = Path(sys.executable).parent / ("notas.exe" if sys.platform == "win32" else "notas")
+    root = Path(__file__).resolve().parents[1]
+    executable = Path(os.environ.get("NOTAS_CLI", root / ".publish" / "windows" / "notas.exe"))
+    if not executable.exists():
+        pytest.fail("Publicá la CLI C# con instalar.ps1 -Pruebas o configurá NOTAS_CLI")
     def invoke(*args):
         return subprocess.run([str(executable), *args], capture_output=True, text=True, encoding="utf-8", env={**os.environ, "PYTHONIOENCODING": "utf-8"}, timeout=25)
     created = invoke("crear", "--nombre", "Persistencia ñ", "--texto", "Contenido")
