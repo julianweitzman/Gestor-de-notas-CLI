@@ -2,6 +2,7 @@ from typing import Annotated
 import httpx
 import typer
 from pydantic import ValidationError
+from .editor import EditorUnavailable, edit_text
 from .models import NoteCreate
 from .server import ServerError, api_client
 
@@ -32,15 +33,22 @@ def show_note(note: dict) -> None:
     typer.echo(f"ID: {note['id']}\nNombre: {note['nombre']}\nCreada: {note['creada_en']}\nTexto:\n{note['texto']}")
 
 
-@app.command("crear", help="Crear una nota; se solicitan los campos omitidos.")
+@app.command("crear", help="Crear una nota; si falta el texto, abre un editor multilínea.")
 def create(
     nombre: Annotated[str | None, typer.Option(help="Nombre de la nota.")] = None,
-    texto: Annotated[str | None, typer.Option(help="Contenido de la nota.")] = None,
+    texto: Annotated[str | None, typer.Option(help="Contenido; si se omite, abre el editor.")] = None,
 ):
     if nombre is None:
         nombre = typer.prompt("Nombre")
     if texto is None:
-        texto = typer.prompt("Texto")
+        try:
+            texto = edit_text()
+        except EditorUnavailable as exc:
+            typer.echo(f"Error: {exc}", err=True)
+            raise typer.Exit(2) from exc
+        if texto is None:
+            typer.echo("Creación cancelada. No se guardó ninguna nota.")
+            raise typer.Exit(0)
     try:
         data = NoteCreate(nombre=nombre, texto=texto)
     except ValidationError:

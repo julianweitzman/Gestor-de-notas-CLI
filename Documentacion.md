@@ -42,7 +42,7 @@ El ID y la fecha reales se generan automáticamente. La fecha está en UTC, por 
 .\.venv\Scripts\notas crear
 ```
 
-La CLI solicita primero `Nombre` y después `Texto`. Escribí cada valor y presioná Enter.
+La CLI solicita `Nombre`. Escribilo y presioná Enter. Después abre un editor de texto en la terminal para escribir el contenido. Enter agrega una línea; para enviar el contenido completo usá Ctrl+S o F2.
 
 También podés combinar ambas formas:
 
@@ -50,11 +50,32 @@ También podés combinar ambas formas:
 .\.venv\Scripts\notas crear --nombre "Pendientes"
 ```
 
-En ese caso, solo se solicita el texto que falta. También funciona si proporcionás únicamente `--texto`.
+En ese caso, abre directamente el editor de texto. Si proporcionás únicamente `--texto`, solo pregunta el nombre y no abre el editor.
 
 ### Escribir texto con varias líneas
 
-Las preguntas interactivas reciben una línea por campo. Para guardar varias líneas, pasá una cadena multilínea de PowerShell:
+No necesitás preparar una variable de PowerShell. Ejecutá:
+
+```powershell
+.\.venv\Scripts\notas crear --nombre "Tareas"
+```
+
+El editor ocupa la terminal y muestra números de línea, la posición del cursor y los atajos. Podés escribir directamente y volver a cualquier línea para corregirla.
+
+| Tecla | Acción |
+| --- | --- |
+| Enter | Insertar una nueva línea en la posición del cursor. |
+| Flechas | Mover el cursor, incluso a líneas anteriores. |
+| Inicio / Fin | Ir al principio o al final de la línea. |
+| Retroceso / Supr | Borrar antes o después del cursor; también permite unir líneas. |
+| Ctrl+S o F2 | Enviar todo el contenido y salir del editor. |
+| Ctrl+C o Ctrl+Q | Cancelar sin crear la nota. |
+
+Podés pegar texto con varias líneas usando la opción de pegado de tu terminal. El contenido solo se envía después de confirmar; no hay guardado automático. Al salir se restaura la pantalla anterior y, si confirmaste, la CLI valida y crea la nota. Un contenido vacío o compuesto solo por espacios se rechaza sin guardarlo.
+
+Si tu terminal intercepta Ctrl+S, usá F2. El editor necesita una terminal interactiva; para scripts o entrada redirigida, proporcioná `--nombre` y `--texto` explícitamente.
+
+Como alternativa para automatizar, `--texto` sigue aceptando cadenas multilínea de PowerShell:
 
 ```powershell
 $contenidoNota = @'
@@ -116,7 +137,9 @@ Terminal → CLI (Typer) → HTTP (HTTPX) → API (FastAPI)
                                   SQLite local
 ```
 
-Typer interpreta los comandos y solicita los campos omitidos. Para crear una nota, la CLI valida los datos con Pydantic y envía nombre y texto a la API. La API vuelve a validar la entrada, genera la fecha UTC y utiliza el servicio y el repositorio para guardar la nota mediante una consulta SQL parametrizada. SQLite asigna el ID. La respuesta vuelve a la CLI, que la presenta en la terminal.
+Typer interpreta los comandos, pregunta el nombre omitido y abre el editor cuando falta el texto. El editor de `editor.py` usa `prompt_toolkit` y devuelve una cadena al confirmar o `None` al cancelar. No accede a HTTP ni a SQLite. Su función `edit_text(initial_text="", title="Texto de la nota")` admite contenido inicial para reutilizarla en una futura edición de notas; esta versión todavía no incluye un comando de edición.
+
+Después de confirmar, la CLI valida los datos con Pydantic y envía nombre y texto a la API. La API vuelve a validar la entrada, genera la fecha UTC y utiliza el servicio y el repositorio para guardar la nota mediante una consulta SQL parametrizada. SQLite asigna el ID. La respuesta vuelve a la CLI, que la presenta en la terminal. Cancelar el editor no inicia la API ni envía una solicitud de creación.
 
 La CLI nunca consulta directamente la base de datos. La API atiende únicamente en `http://127.0.0.1:8000` y no requiere conexión a Internet para las operaciones de notas.
 
@@ -184,6 +207,8 @@ Para realizar un respaldo, detené el servidor y copiá `notas.sqlite3`. Para re
 | --- | --- |
 | No se encuentra `notas`. | Usá `.\.venv\Scripts\notas` desde la raíz del proyecto y comprobá que realizaste la instalación. |
 | Nombre o texto vacío. | Ingresá contenido que no sea solamente espacios. |
+| El editor necesita una terminal interactiva. | Ejecutá el comando directamente en una terminal o pasá `--nombre` y `--texto` para automatizar. |
+| Ctrl+S no envía el texto. | Usá F2; algunas terminales reservan Ctrl+S. |
 | No existe una nota con ese ID. | Ejecutá `listar` y verificá el ID. |
 | Puerto 8000 ocupado o versión incompatible. | Revisá qué servicio está usando el puerto; la CLI no lo detiene. El puerto no tiene una opción de configuración en esta versión. |
 | La API no inicia o tarda demasiado. | Consultá la ruta del registro indicada en el error y ejecutá `servidor` manualmente para ver su salida. |

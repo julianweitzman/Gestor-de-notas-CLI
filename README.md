@@ -20,7 +20,9 @@ notas listar
 notas ver 1
 ```
 
-Los campos omitidos se solicitan interactivamente. Para textos con varias líneas, pasá una cadena multilínea mediante `--texto`. Nombre y texto no pueden estar vacíos ni contener solo espacios. Se permiten nombres repetidos. El ID es automático y la fecha de creación se guarda en UTC.
+Si omitís el nombre, la CLI lo pregunta. Si omitís `--texto`, abre un editor de terminal con varias líneas: Enter agrega una línea, las flechas permiten moverse y Retroceso/Supr borran caracteres. Podés volver a líneas anteriores y corregirlas. Ctrl+S o F2 envían el contenido; Ctrl+C o Ctrl+Q cancelan sin guardar. Los atajos aparecen en pantalla. `--texto` sigue disponible para automatizar y no abre el editor.
+
+Nombre y texto no pueden estar vacíos ni contener solo espacios. Se permiten nombres repetidos. El ID es automático y la fecha de creación se guarda en UTC.
 
 La CLI accede exclusivamente por HTTP a `127.0.0.1:8000`. Si la API no está encendida, la inicia sin abrir otra ventana y la cierra al terminar el comando, también ante errores. Si ya está encendida, la reutiliza y la deja funcionando. No se repiten automáticamente las creaciones ante errores de conexión.
 
