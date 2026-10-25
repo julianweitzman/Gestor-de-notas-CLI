@@ -4,7 +4,7 @@ from fastapi import FastAPI, HTTPException, Path as PathParameter
 from .config import APP_ID, PROTOCOL_VERSION, database_path
 from .models import Note, NoteCreate
 from .service import NoteService
-from .storage import Repository
+from .storage import DuplicateNameError, Repository
 
 
 def create_app(db_path: Path | None = None) -> FastAPI:
@@ -24,11 +24,14 @@ def create_app(db_path: Path | None = None) -> FastAPI:
 
     @application.post("/notas", response_model=Note, status_code=201)
     def create_note(data: NoteCreate):
-        return service.create(data)
+        try:
+            return service.create(data)
+        except DuplicateNameError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
 
     @application.get("/notas", response_model=list[Note])
-    def list_notes():
-        return service.list()
+    def list_notes(nombre: str | None = None):
+        return service.list(nombre)
 
     @application.get("/notas/{note_id}", response_model=Note)
     def get_note(note_id: int = PathParameter(gt=0)):

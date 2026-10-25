@@ -7,3 +7,5 @@ build/
 dist/
 *.sqlite3
 *.log
+
+.test-tmp-*/

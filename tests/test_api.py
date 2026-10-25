@@ -15,7 +15,8 @@ def test_persistence_and_contract(tmp_path):
         assert first["nombre"] == payload["nombre"]
         assert first["texto"] == payload["texto"]
         assert datetime.fromisoformat(first["creada_en"]).utcoffset().total_seconds() == 0
-        second = client.post("/notas", json=payload).json()
+        assert client.post("/notas", json=payload).status_code == 409
+        second = client.post("/notas", json={**payload, "nombre": "Otra"}).json()
         assert second["id"] != first["id"]
         assert [note["id"] for note in client.get("/notas").json()] == [second["id"], first["id"]]
         assert client.get(f"/notas/{first['id']}").json() == first

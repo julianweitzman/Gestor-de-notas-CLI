@@ -4,6 +4,7 @@ import typer
 from pydantic import ValidationError
 from .editor import EditorUnavailable, edit_text
 from .models import NoteCreate
+from .selector import SelectionUnavailable, select_note
 from .server import ServerError, api_client
 
 app = typer.Typer(help="Creá y consultá tus notas locales.", no_args_is_help=True)
@@ -15,6 +16,8 @@ def request(method: str, path: str, **kwargs):
             response = client.request(method, path, **kwargs)
             if response.status_code == 404:
                 raise ServerError("No existe una nota con ese ID.")
+            if response.status_code == 409:
+                raise ServerError("Ya existe una nota con ese nombre. Elegí otro nombre.")
             if response.status_code == 422:
                 raise ServerError("Los datos enviados no son válidos.")
             response.raise_for_status()
@@ -69,9 +72,39 @@ def list_notes():
         typer.echo(f"{note['id']}\t{name}\t{note['creada_en']}")
 
 
-@app.command("ver", help="Consultar una nota por su ID.")
-def get_note(note_id: Annotated[int, typer.Argument(min=1, help="ID de la nota.")]):
-    show_note(request("GET", f"/notas/{note_id}"))
+@app.command("ver", help="Consultar una nota por ID o buscar por nombre completo o parcial.")
+def get_note(
+    referencia: Annotated[str | None, typer.Argument(help="ID o nombre de la nota.")] = None,
+    nombre: Annotated[str | None, typer.Option(help="Buscar por nombre, incluso si es numérico.")] = None,
+):
+    if referencia is not None and nombre is not None:
+        raise typer.BadParameter("Usá una referencia o --nombre, no ambos.")
+    if nombre is None and referencia is not None and referencia.isascii() and referencia.isdigit():
+        if int(referencia) < 1:
+            raise typer.BadParameter("El ID debe ser mayor que cero.")
+        show_note(request("GET", f"/notas/{int(referencia)}"))
+        return
+    query = nombre if nombre is not None else referencia
+    if query is None:
+        query = typer.prompt("Nombre o parte del nombre")
+    if not query.strip():
+        raise typer.BadParameter("La búsqueda no puede estar vacía.")
+    notes = request("GET", "/notas", params={"nombre": query})
+    if not notes:
+        typer.echo("No se encontraron notas con ese nombre.")
+        raise typer.Exit(1)
+    if len(notes) == 1:
+        show_note(notes[0])
+        return
+    try:
+        selected = select_note(notes)
+    except SelectionUnavailable as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        raise typer.Exit(2) from exc
+    if selected is None:
+        typer.echo("Consulta cancelada.")
+        return
+    show_note(selected)
 
 
 @app.command("servidor", help="Mantener la API encendida; Ctrl+C para detenerla.")

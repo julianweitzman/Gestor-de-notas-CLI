@@ -89,7 +89,7 @@ Tercera tarea
 ### Reglas de las notas
 
 - Nombre y texto son obligatorios y no pueden estar vacíos ni contener solamente espacios.
-- Se permiten nombres repetidos; el ID identifica cada nota.
+- Los nombres son únicos (se distinguen mayúsculas y espacios); el ID también identifica cada nota.
 - El texto conserva los saltos de línea.
 - El ID es un entero positivo generado por SQLite y la fecha de creación la genera la API.
 
@@ -218,3 +218,19 @@ Para realizar un respaldo, detené el servidor y copiá `notas.sqlite3`. Para re
 ## 9. Alcance actual
 
 La aplicación está pensada para uso local de una persona. Permite crear, listar y consultar notas; todavía no incluye edición, eliminación, búsqueda ni sincronización. La API no tiene autenticación y escucha en la dirección local `127.0.0.1`.
+
+
+## Buscar por nombre y seleccionar
+
+```powershell
+notas ver "Compras"
+notas ver "comp"
+notas ver --nombre "123"
+notas ver
+```
+
+La búsqueda encuentra nombres completos o parciales sin distinguir mayúsculas, incluidos caracteres Unicode. Sin argumento, pregunta qué nombre buscar. Una coincidencia se abre directamente; con varias, muestra una lista: usá las flechas arriba/abajo y Enter para abrir la seleccionada. Ctrl+C o Esc cierran la consulta. En scripts, usá el ID si hay varias coincidencias. `notas ver 1` sigue funcionando; `--nombre` permite buscar nombres numéricos.
+
+`GET /notas?nombre=texto` filtra por nombre; sin filtro sigue listando todas las notas. Crear un nombre repetido devuelve HTTP 409 y un mensaje en la CLI. SQLite garantiza la unicidad incluso ante creaciones simultáneas.
+
+Al abrir una base anterior, los nombres repetidos se migran automáticamente: se conserva el nombre de la nota con menor ID y se agrega ` (2)`, ` (3)`, etc. a las siguientes, evitando nombres ya existentes. No se eliminan notas ni se cambian sus IDs, textos o fechas. Esta migración ocurre una sola vez; si mantenés el servidor encendido, reinicialo para aplicar la actualización.
