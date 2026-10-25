@@ -111,16 +111,7 @@ notas editar "Compras" --nombre "Compras semanales"
 
 Usá `notas editar 1 --nombre "Nuevo nombre"` para renombrar conservando el texto, `notas editar 1 --texto "Nuevo contenido"` para cambiar solo el texto, o ambas opciones para cambiar los dos campos sin abrir el editor. El ID y la fecha de creación se conservan. Nombre y texto deben tener contenido y el nombre debe seguir siendo único.
 
-Para usar controles de Vim, agregá `--vim`:
-
-```powershell
-notas editar "Compras" --vim
-notas editar 1 --vim
-```
-
-El editor inicia en modo normal: `i` entra en inserción, Esc vuelve al modo normal y `h/j/k/l` mueven el cursor. También admite acciones como `dd` para borrar una línea y `u` para deshacer. En modo normal, escribí `:wq` y Enter para guardar y salir, o `:q!` y Enter para cancelar descartando los cambios. `:q` sale si no hubo cambios; si los hay, avisa y mantiene el editor abierto. Esc cancela la entrada de un comando. El modo actual y los atajos aparecen en pantalla. Ctrl+S/F2 y Ctrl+C/Ctrl+Q siguen disponibles.
-
-`--vim` abre el editor incluso si proporcionás `--nombre`, para poder renombrar y editar contenido juntos. No se combina con `--texto`. Es un editor integrado con controles de Vim; no ejecuta un programa externo. Sin `--vim`, se mantiene la escritura directa habitual. En scripts sin terminal, usá `--texto` y un ID si hay varias coincidencias.
+El editor permite escribir directamente y moverse con las flechas, igual que al crear una nota. En scripts sin terminal, usá `--texto` y un ID si hay varias coincidencias.
 
 Si ocurre un error de conexión, no se repite automáticamente la edición: consultá `notas ver ID` antes de reintentar. Si tenías `notas servidor` encendido al actualizar, reinicialo para habilitar la edición.
 

@@ -17,13 +17,13 @@ class Terminal(io.StringIO):
 def terminal(monkeypatch):
     with create_pipe_input() as pipe:
         with create_app_session(input=pipe, output=DummyOutput()):
-            def run_editor(keys, initial_text="", *, title="Texto de la nota", vim=False):
+            def run_editor(keys, initial_text="", *, title="Texto de la nota"):
                 pipe.send_text(keys)
                 # pytest restaura la captura entre setup y la llamada al test.
                 with monkeypatch.context() as terminal_patch:
                     terminal_patch.setattr(editor.sys, "stdin", Terminal())
                     terminal_patch.setattr(editor.sys, "stdout", Terminal())
-                    return editor.edit_text(initial_text, title=title, vim=vim)
+                    return editor.edit_text(initial_text, title=title)
             yield run_editor
 
 
@@ -67,28 +67,3 @@ def test_noninteractive_input_has_actionable_error(monkeypatch):
     monkeypatch.setattr(editor.sys, "stdin", io.StringIO("texto"))
     with pytest.raises(editor.EditorUnavailable, match="--texto"):
         editor.edit_text()
-
-
-def test_vim_insert_normal_motion_and_save(terminal):
-    assert terminal("iNueva \x1bjA!\x1b:wq\r", "Primera\nSegunda", vim=True) == "Nueva Primera\nSegunda!"
-
-
-def test_vim_delete_undo_and_save(terminal):
-    assert terminal("dd u:wq\r", "Primera\nSegunda", vim=True) == "Primera\nSegunda"
-
-
-def test_vim_cancel_discards_changes(terminal):
-    assert terminal("iCambio\x1b:q!\r", "Original", vim=True) is None
-
-
-def test_vim_q_does_not_discard_unsaved_changes(terminal):
-    assert terminal("iCambio\x1b:q\r:wq\r", "Original", vim=True) == "CambioOriginal"
-
-
-def test_vim_unknown_command_and_escape_return_to_note(terminal):
-    assert terminal(":desconocido\r:otra\x1biNuevo\x1b:wq\r", "Original", vim=True) == "NuevoOriginal"
-
-
-def test_vim_q_without_changes_and_shortcuts(terminal):
-    assert terminal(":q\r", "Original", vim=True) is None
-    assert terminal("iNuevo\x13", vim=True) == "Nuevo"

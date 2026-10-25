@@ -119,19 +119,18 @@ def test_edit_name_cancel_missing_and_selection_unavailable(monkeypatch):
         request.assert_called_once_with("GET", "/notas", params={"nombre": "idea"})
 
 
-def test_edit_vim_and_rename(monkeypatch):
-    request = Mock(side_effect=[[NOTE], {**NOTE, "nombre": "Nueva", "texto": "Editado"}])
+def test_edit_by_name_opens_original_editor(monkeypatch):
+    request = Mock(side_effect=[[NOTE], {**NOTE, "texto": "Editado"}])
     editor = Mock(return_value="Editado")
     monkeypatch.setattr(cli, "request", request)
     monkeypatch.setattr(cli, "edit_text", editor)
-    result = runner.invoke(cli.app, ["editar", "idea", "--nombre", "Nueva", "--vim"])
+    result = runner.invoke(cli.app, ["editar", "idea"])
     assert result.exit_code == 0, result.output
-    editor.assert_called_once_with(NOTE["texto"], vim=True)
-    request.assert_called_with("PUT", "/notas/1", json={"nombre": "Nueva", "texto": "Editado"})
+    editor.assert_called_once_with(NOTE["texto"])
+    request.assert_called_with("PUT", "/notas/1", json={"nombre": "Idea", "texto": "Editado"})
 
 
 @pytest.mark.parametrize("args", [
-    ["1", "--texto", "X", "--vim"],
     ["idea", "--buscar-nombre", "otra"],
     [" "],
 ])

@@ -11,10 +11,10 @@ from .server import ServerError, api_client
 app = typer.Typer(help="Creá, consultá, editá y eliminá tus notas locales.", no_args_is_help=True)
 
 
-def edit_text(initial_text: str = "", *, vim: bool = False) -> str | None:
+def edit_text(initial_text: str = "") -> str | None:
     from .editor import edit_text as run_editor
 
-    return run_editor(initial_text, vim=vim)
+    return run_editor(initial_text)
 
 
 def select_note(notes: list[dict]) -> dict | None:
@@ -143,20 +143,17 @@ def update_note(
     nombre: Annotated[str | None, typer.Option(help="Nuevo nombre; si se omite, conserva el actual.")] = None,
     texto: Annotated[str | None, typer.Option(help="Nuevo contenido de la nota.")] = None,
     buscar_nombre: Annotated[str | None, typer.Option(help="Buscar por nombre, incluso si es numérico.")] = None,
-    vim: Annotated[bool, typer.Option("--vim", help="Abrir el editor con controles de Vim.")] = False,
 ) -> None:
-    if vim and texto is not None:
-        raise typer.BadParameter("Usá --vim o --texto, no ambos.")
     note = resolve_note(referencia, buscar_nombre)
     if note is None:
         typer.echo("Edición cancelada. No se guardaron cambios.")
         return
     note_id = note["id"]
-    if vim or (nombre is None and texto is None):
+    if nombre is None and texto is None:
         from .editor import EditorUnavailable
 
         try:
-            texto = edit_text(note["texto"], vim=True) if vim else edit_text(note["texto"])
+            texto = edit_text(note["texto"])
         except EditorUnavailable as exc:
             typer.echo(f"Error: {exc}", err=True)
             raise typer.Exit(2) from exc
