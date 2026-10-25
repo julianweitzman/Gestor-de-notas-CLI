@@ -1,7 +1,7 @@
 from contextlib import contextmanager
 import httpx
 from typer.testing import CliRunner
-from gestor_notas import cli
+from gestor_notas_cli import cli
 
 runner = CliRunner()
 
@@ -84,7 +84,7 @@ def test_explicit_text_bypasses_editor(monkeypatch):
 
 def test_editor_unavailable_is_explained_without_sending(monkeypatch):
     from unittest.mock import Mock
-    from gestor_notas.editor import EditorUnavailable
+    from gestor_notas_cli.editor import EditorUnavailable
 
     monkeypatch.setattr(cli, "edit_text", Mock(side_effect=EditorUnavailable("Usá --texto.")))
     request = Mock()

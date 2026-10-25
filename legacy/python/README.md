@@ -1,3 +1,16 @@
+> CLI Python archivada. El backend activo está en `../../src/gestor_notas/` y se instala desde la raíz del repositorio.
+>
+> Para ejecutar esta CLI como referencia, instalá ambos paquetes en un mismo entorno desde la raíz:
+>
+> ```powershell
+> python -m venv .venv
+> .\.venv\Scripts\python -m pip install -e ".[test]" -e "legacy/python[test]"
+> .\.venv\Scripts\notas --help
+> .\.venv\Scripts\python -m pytest -q legacy/python/tests
+> ```
+>
+> Los ejemplos históricos siguientes describen la CLI anterior. Su paquete ahora se llama `gestor-de-tarjetas-cli-legacy`; para desinstalar solamente la CLI, usá `python -m pip uninstall gestor-de-tarjetas-cli-legacy` con el intérprete del entorno. El backend conserva el nombre `gestor-de-tarjetas`. Las cuatro pruebas del instalador requieren `instalar.ps1`, que ya faltaba antes de archivar la CLI.
+
 # Gestor de notas
 
 CLI con Typer, API con FastAPI y almacenamiento local SQLite. Requiere Python 3.11 o posterior.
@@ -154,6 +167,6 @@ notas ver
 
 La búsqueda encuentra nombres completos o parciales sin distinguir mayúsculas, incluidos caracteres Unicode. Sin argumento, pregunta qué nombre buscar. Una coincidencia se abre directamente; con varias, muestra una lista: usá las flechas arriba/abajo y Enter para abrir la seleccionada. Ctrl+C o Esc cierran la consulta. En scripts, usá el ID si hay varias coincidencias. `notas ver 1` sigue funcionando; `--nombre` permite buscar nombres numéricos.
 
-`GET /notas?nombre=texto` filtra por nombre; sin filtro sigue listando todas las notas. Crear un nombre repetido devuelve HTTP 409 y un mensaje en la CLI. SQLite garantiza la unicidad incluso ante creaciones simultáneas.
+`GET /notasínombre=texto` filtra por nombre; sin filtro sigue listando todas las notas. Crear un nombre repetido devuelve HTTP 409 y un mensaje en la CLI. SQLite garantiza la unicidad incluso ante creaciones simultáneas.
 
 Al abrir una base anterior, los nombres repetidos se migran automáticamente: se conserva el nombre de la nota con menor ID y se agrega ` (2)`, ` (3)`, etc. a las siguientes, evitando nombres ya existentes. No se eliminan notas ni se cambian sus IDs, textos o fechas. Esta migración ocurre una sola vez; si mantenés el servidor encendido, reinicialo para aplicar la actualización.

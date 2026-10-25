@@ -2,24 +2,22 @@
 
 ## Estructura y arquitectura
 
-El proyecto está migrando a C#. La implementación Python está archivada en `legacy/python/`; las instrucciones de Python de este documento se aplican dentro de esa carpeta. Todavía no hay código C# en esta rama. La versión archivada requiere Python 3.11 o posterior. El código está en `src/gestor_notas/`: `cli.py` implementa Typer; `api.py`, FastAPI; `models.py`, los modelos Pydantic; `service.py`, la lógica de notas; `storage.py`, SQLite; `server.py`, el ciclo de vida del servidor; y `config.py`, las rutas y configuración.
+El backend requiere Python 3.11 o posterior y sigue activo en `src/gestor_notas/`: `api.py` implementa FastAPI; `models.py`, los modelos Pydantic; `service.py`, la lógica de notas; `storage.py`, SQLite; `server.py`, las utilidades de ciclo de vida del servidor; y `config.py`, las rutas y configuración. Solamente la CLI Python, el editor y el selector están archivados en `legacy/python/src/gestor_notas_cli/`, durante la migración de la CLI a C#.
 
-La CLI accede exclusivamente por HTTP a la API. Conservá esta separación: no agregues consultas SQLite a los comandos. Las pruebas están en `tests/`; `pyproject.toml` define dependencias y el comando instalable `notas`. No hay recursos gráficos ni frontend.
+La CLI accede exclusivamente por HTTP a la API. Conservá esta separación: no agregues consultas SQLite a los comandos. Las pruebas del backend están en `tests/`; las de la CLI, en `legacy/python/tests/`. El `pyproject.toml` raíz instala solamente el backend; el paquete archivado instala el comando `notas`. No hay recursos gráficos ni frontend.
 
 ## Instalación y desarrollo
 
-Desde `legacy/python/`, en PowerShell:
+Desde la raíz, en PowerShell:
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\python -m pip install -e ".[test]"
-.\.venv\Scripts\notas --help
-.\.venv\Scripts\notas crear --nombre "Idea" --texto "Contenido"
-.\.venv\Scripts\notas servidor
+.\.venv\Scripts\python -m uvicorn gestor_notas.api:create_app --factory --host 127.0.0.1 --port 8000
 .\.venv\Scripts\python -m pytest -q
 ```
 
-La instalación editable refleja los cambios del código. `servidor` mantiene la API en primer plano hasta Ctrl+C; los demás comandos la inician automáticamente si hace falta. La documentación HTTP está en `http://127.0.0.1:8000/docs` mientras funciona.
+La instalación editable refleja los cambios del código. Uvicorn mantiene la API en primer plano hasta Ctrl+C. La documentación HTTP está en `http://127.0.0.1:8000/docs` mientras funciona. Para instalar y probar la CLI archivada, consultá `legacy/python/README.md`.
 
 ## Estilo y nombres
 

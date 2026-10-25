@@ -3,20 +3,21 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "gestor-de-tarjetas"
+name = "gestor-de-tarjetas-cli-legacy"
 version = "0.1.0"
-description = "Gestor local de notas con CLI y API"
+description = "CLI Python archivada para referencia durante la migración a C#"
 requires-python = ">=3.11"
-dependencies = ["pydantic>=2.9,<3", "fastapi>=0.115,<1", "uvicorn>=0.30,<1", "typer>=0.12,<1", "httpx>=0.27,<1", "platformdirs>=4,<5", "prompt-toolkit>=3.0.43,<4", "rich>=13,<15"]
+dependencies = ["gestor-de-tarjetas==0.1.0", "typer>=0.12,<1", "prompt-toolkit>=3.0.43,<4", "rich>=13,<15"]
 
 [project.optional-dependencies]
 test = ["pytest>=8,<10"]
 
 [project.scripts]
-notas = "gestor_notas.cli:app"
+notas = "gestor_notas_cli.cli:app"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+include = ["gestor_notas_cli*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

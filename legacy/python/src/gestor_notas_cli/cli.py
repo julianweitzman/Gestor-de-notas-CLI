@@ -5,8 +5,8 @@ from pydantic import ValidationError
 from rich.console import Console
 from rich.table import Table
 from rich.text import Text
-from .models import NoteCreate
-from .server import ServerError, api_client
+from gestor_notas.models import NoteCreate
+from gestor_notas.server import ServerError, api_client
 
 app = typer.Typer(help="Creá, consultá, editá y eliminá tus notas locales.", no_args_is_help=True)
 
@@ -188,7 +188,7 @@ def delete_note(
 @app.command("servidor", help="Mantener la API encendida; Ctrl+C para detenerla.")
 def server():
     import uvicorn
-    from .api import create_app
-    from .config import HOST, PORT
+    from gestor_notas.api import create_app
+    from gestor_notas.config import HOST, PORT
     typer.echo(f"API disponible en http://{HOST}:{PORT}. Ctrl+C para detenerla.")
     uvicorn.run(create_app(), host=HOST, port=PORT)

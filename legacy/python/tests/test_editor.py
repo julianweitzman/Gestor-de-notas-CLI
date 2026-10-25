@@ -5,7 +5,7 @@ from prompt_toolkit.application import create_app_session
 from prompt_toolkit.input import create_pipe_input
 from prompt_toolkit.output import DummyOutput
 
-from gestor_notas import editor
+from gestor_notas_cli import editor
 
 
 class Terminal(io.StringIO):
