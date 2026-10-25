@@ -11,10 +11,10 @@ from .server import ServerError, api_client
 app = typer.Typer(help="Creá, consultá, editá y eliminá tus notas locales.", no_args_is_help=True)
 
 
-def edit_text(initial_text: str = "") -> str | None:
+def edit_text(initial_text: str = "", *, vim: bool = False) -> str | None:
     from .editor import edit_text as run_editor
 
-    return run_editor(initial_text)
+    return run_editor(initial_text, vim=vim)
 
 
 def select_note(notes: list[dict]) -> dict | None:
@@ -97,18 +97,13 @@ def list_notes():
     Console().print(table)
 
 
-@app.command("ver", help="Consultar una nota por ID o buscar por nombre completo o parcial.")
-def get_note(
-    referencia: Annotated[str | None, typer.Argument(help="ID o nombre de la nota.")] = None,
-    nombre: Annotated[str | None, typer.Option(help="Buscar por nombre, incluso si es numérico.")] = None,
-):
+def resolve_note(referencia: str | None, nombre: str | None) -> dict | None:
     if referencia is not None and nombre is not None:
-        raise typer.BadParameter("Usá una referencia o --nombre, no ambos.")
-    if nombre is None and referencia is not None and referencia.isascii() and referencia.isdigit():
+        raise typer.BadParameter("Usá una referencia o una opción de búsqueda por nombre, no ambas.")
+    if nombre is None and referencia is not None and referencia.isascii() and referencia.lstrip("-").isdigit():
         if int(referencia) < 1:
             raise typer.BadParameter("El ID debe ser mayor que cero.")
-        show_note(request("GET", f"/notas/{int(referencia)}"))
-        return
+        return request("GET", f"/notas/{int(referencia)}")
     query = nombre if nombre is not None else referencia
     if query is None:
         query = typer.prompt("Nombre o parte del nombre")
@@ -119,8 +114,7 @@ def get_note(
         typer.echo("No se encontraron notas con ese nombre.")
         raise typer.Exit(1)
     if len(notes) == 1:
-        show_note(notes[0])
-        return
+        return notes[0]
     from .selector import SelectionUnavailable
 
     try:
@@ -128,24 +122,41 @@ def get_note(
     except SelectionUnavailable as exc:
         typer.echo(f"Error: {exc}", err=True)
         raise typer.Exit(2) from exc
-    if selected is None:
+    return selected
+
+
+@app.command("ver", help="Consultar una nota por ID o buscar por nombre completo o parcial.")
+def get_note(
+    referencia: Annotated[str | None, typer.Argument(help="ID o nombre de la nota.")] = None,
+    nombre: Annotated[str | None, typer.Option(help="Buscar por nombre, incluso si es numérico.")] = None,
+):
+    note = resolve_note(referencia, nombre)
+    if note is None:
         typer.echo("Consulta cancelada.")
         return
-    show_note(selected)
+    show_note(note)
 
 
-@app.command("editar", help="Editar una nota por ID; sin opciones, abre el editor con el texto actual.")
+@app.command("editar", help="Editar por ID o nombre; sin opciones, abre el editor con el texto actual.")
 def update_note(
-    note_id: Annotated[int, typer.Argument(min=1, help="ID de la nota que se editará.")],
+    referencia: Annotated[str | None, typer.Argument(help="ID o nombre completo o parcial de la nota.")] = None,
     nombre: Annotated[str | None, typer.Option(help="Nuevo nombre; si se omite, conserva el actual.")] = None,
     texto: Annotated[str | None, typer.Option(help="Nuevo contenido de la nota.")] = None,
+    buscar_nombre: Annotated[str | None, typer.Option(help="Buscar por nombre, incluso si es numérico.")] = None,
+    vim: Annotated[bool, typer.Option("--vim", help="Abrir el editor con controles de Vim.")] = False,
 ) -> None:
-    note = request("GET", f"/notas/{note_id}")
-    if nombre is None and texto is None:
+    if vim and texto is not None:
+        raise typer.BadParameter("Usá --vim o --texto, no ambos.")
+    note = resolve_note(referencia, buscar_nombre)
+    if note is None:
+        typer.echo("Edición cancelada. No se guardaron cambios.")
+        return
+    note_id = note["id"]
+    if vim or (nombre is None and texto is None):
         from .editor import EditorUnavailable
 
         try:
-            texto = edit_text(note["texto"])
+            texto = edit_text(note["texto"], vim=True) if vim else edit_text(note["texto"])
         except EditorUnavailable as exc:
             typer.echo(f"Error: {exc}", err=True)
             raise typer.Exit(2) from exc

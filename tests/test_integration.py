@@ -24,7 +24,7 @@ def test_real_cli_and_automatic_server(tmp_path, monkeypatch):
     fetched = invoke("ver", "1")
     assert fetched.returncode == 0, fetched.stdout + fetched.stderr
     assert "Persistencia ñ" in fetched.stdout
-    edited = invoke("editar", "1", "--nombre", "Revisada ñ", "--texto", "Nuevo\nContenido")
+    edited = invoke("editar", "persistencia", "--nombre", "Revisada ñ", "--texto", "Nuevo\nContenido")
     assert edited.returncode == 0, edited.stdout + edited.stderr
     fetched = invoke("ver", "1")
     assert fetched.returncode == 0, fetched.stdout + fetched.stderr
