@@ -6,10 +6,48 @@ CLI con Typer, API con FastAPI y almacenamiento local SQLite. Requiere Python 3.
 
 ## Instalación en PowerShell
 
+Desde la raíz del proyecto, ejecutá (no requiere permisos de administrador):
+
 ```powershell
-python -m venv .venv
+powershell -NoProfile -ExecutionPolicy Bypass -File .\instalar.ps1
+```
+
+El script comprueba Python 3.11 o posterior, crea `.venv` si hace falta, instala la CLI y verifica `notas --help`. Necesita acceso a Internet para descargar dependencias. Podés ejecutarlo de nuevo para actualizar o reparar la instalación. Usa la carpeta del script, incluso si lo llamás desde otro directorio. La instalación es editable: conservá el repositorio en su ubicación.
+
+Si necesitás elegir una instalación de Python, usá `-Python` (se aplica al crear el entorno):
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\instalar.ps1 -Python "C:\ruta\Python311\python.exe"
+```
+
+Para usar la CLI sin activar el entorno:
+
+```powershell
+.\.venv\Scripts\notas.exe listar
+```
+
+Para habilitar `notas` en la terminal actual:
+
+```powershell
+Set-ExecutionPolicy -Scope Process Bypass
+.\.venv\Scripts\Activate.ps1
+notas --help
+```
+
+La política indicada solo afecta a esa sesión. En una terminal nueva necesitás activar el entorno otra vez o usar la ruta completa. El script no modifica el PATH global.
+
+Para desinstalar la CLI de este entorno:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\instalar.ps1 -Accion Desinstalar
+```
+
+La desinstalación conserva las notas, `.venv` y sus dependencias; no afecta instalaciones realizadas con otro Python o con pipx. Para una instalación anterior, usá el mismo intérprete con el que la instalaste: `python -m pip uninstall gestor-de-tarjetas`. El paquete se llama `gestor-de-tarjetas`, aunque el comando es `notas`. Cerrá primero `notas servidor` si lo tenés ejecutándose.
+
+Para desarrollo y pruebas, después de instalar:
+
+```powershell
 .\.venv\Scripts\python -m pip install -e ".[test]"
-.\.venv\Scripts\notas --help
 ```
 
 Con el entorno activado, los ejemplos se ejecutan directamente como `notas`:
