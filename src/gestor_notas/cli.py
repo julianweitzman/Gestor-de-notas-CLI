@@ -5,12 +5,22 @@ from pydantic import ValidationError
 from rich.console import Console
 from rich.table import Table
 from rich.text import Text
-from .editor import EditorUnavailable, edit_text
 from .models import NoteCreate
-from .selector import SelectionUnavailable, select_note
 from .server import ServerError, api_client
 
 app = typer.Typer(help="Creá y consultá tus notas locales.", no_args_is_help=True)
+
+
+def edit_text() -> str | None:
+    from .editor import edit_text as run_editor
+
+    return run_editor()
+
+
+def select_note(notes: list[dict]) -> dict | None:
+    from .selector import select_note as run_selector
+
+    return run_selector(notes)
 
 
 def request(method: str, path: str, **kwargs):
@@ -47,6 +57,8 @@ def create(
     if nombre is None:
         nombre = typer.prompt("Nombre")
     if texto is None:
+        from .editor import EditorUnavailable
+
         try:
             texto = edit_text()
         except EditorUnavailable as exc:
@@ -103,6 +115,8 @@ def get_note(
     if len(notes) == 1:
         show_note(notes[0])
         return
+    from .selector import SelectionUnavailable
+
     try:
         selected = select_note(notes)
     except SelectionUnavailable as exc:

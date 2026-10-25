@@ -72,6 +72,29 @@ def test_connect_timeout_means_no_server():
         assert server.healthy(client) is False
 
 
+def test_health_uses_short_connect_timeout():
+    def handle(request):
+        assert request.extensions["timeout"]["connect"] == 0.05
+        assert request.extensions["timeout"]["read"] == 0.5
+        return httpx.Response(200, json={
+            "app": server.APP_ID, "protocol_version": server.PROTOCOL_VERSION,
+        })
+    with httpx.Client(base_url="http://test", transport=httpx.MockTransport(handle)) as client:
+        assert server.healthy(client) is True
+
+
+def test_local_http_client_does_not_load_tls_certificates(monkeypatch):
+    import ssl
+
+    load = Mock(side_effect=AssertionError("HTTP local no necesita certificados TLS"))
+    monkeypatch.setattr(ssl.SSLContext, "load_verify_locations", load)
+    monkeypatch.setattr(ssl.SSLContext, "load_default_certs", load)
+    monkeypatch.setattr(server, "healthy", lambda client: True)
+    with server.api_client() as client:
+        assert client.base_url.scheme == "http"
+    load.assert_not_called()
+
+
 def test_foreign_server_does_not_spawn_or_stop_process(monkeypatch):
     def reject(client):
         raise server.ServerError("Puerto ocupado")

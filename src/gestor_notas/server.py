@@ -13,7 +13,9 @@ class ServerError(RuntimeError):
 
 def healthy(client: httpx.Client) -> bool:
     try:
-        response = client.get("/health", timeout=0.5)
+        # En Windows una conexión rechazada puede agotar el timeout completo.
+        # Sondeos locales breves, sin recortar el plazo de respuesta de la API.
+        response = client.get("/health", timeout=httpx.Timeout(0.5, connect=0.05))
     except (httpx.ConnectError, httpx.ConnectTimeout):
         return False
     except httpx.HTTPError as exc:
@@ -40,7 +42,8 @@ def stop_process(process: subprocess.Popen) -> None:
 @contextmanager
 def api_client(startup_timeout: float = 10) -> Iterator[httpx.Client]:
     process = None
-    with httpx.Client(base_url=BASE_URL, timeout=5, trust_env=False) as client:
+    # BASE_URL usa exclusivamente HTTP local: no cargar certificados TLS.
+    with httpx.Client(base_url=BASE_URL, timeout=5, trust_env=False, verify=False) as client:
         try:
             if not healthy(client):
                 path = log_path()
