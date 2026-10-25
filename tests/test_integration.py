@@ -5,7 +5,7 @@ import sys
 import time
 from pathlib import Path
 import pytest
-from gestor_notas.server import api_client
+from gestor_notas_cli.server import api_client
 
 
 def test_real_cli_and_automatic_server(tmp_path, monkeypatch):

@@ -2,7 +2,7 @@
 
 ## Estructura y arquitectura
 
-El backend requiere Python 3.11+ y vive en `src/gestor_notas/`: FastAPI, Pydantic, servicio y SQLite. La CLI está en `cli/Notas.Cli/`, requiere .NET 10 y usa System.CommandLine, Spectre.Console, HttpClient y Terminal.Gui. Los módulos Python de CLI se conservan como referencia para pruebas, sin registrar un comando instalable.
+El backend requiere Python 3.11+ y vive en `src/gestor_notas/`: FastAPI, Pydantic, servicio y SQLite. La CLI está en `cli/Notas.Cli/`, requiere .NET 10 y usa System.CommandLine, Spectre.Console, HttpClient y Terminal.Gui. La CLI Python anterior está en `legacy/gestor_notas_cli/`, fuera del paquete del backend, como referencia para pruebas y benchmarks. No registra un comando instalable. Pytest configura `legacy/` en su ruta de importación.
 
 La CLI accede exclusivamente por HTTP a la API. No agregues consultas SQLite a los comandos. Cada comando reutiliza una sesión de servidor y solo cierra su proceso propio. Conservá los comandos, opciones, mensajes en español y escucha local.
 

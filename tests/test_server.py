@@ -1,7 +1,7 @@
 from unittest.mock import Mock
 import httpx
 import pytest
-from gestor_notas import server
+from gestor_notas_cli import server
 
 
 def test_health_rejects_other_services():

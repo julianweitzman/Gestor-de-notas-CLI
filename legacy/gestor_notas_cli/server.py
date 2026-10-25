@@ -4,7 +4,7 @@ import time
 from contextlib import contextmanager
 from typing import Iterator
 import httpx
-from .config import APP_ID, BASE_URL, HOST, PORT, PROTOCOL_VERSION, log_path
+from gestor_notas.config import APP_ID, BASE_URL, HOST, PORT, PROTOCOL_VERSION, log_path
 
 
 class ServerError(RuntimeError):

@@ -5,8 +5,8 @@ import httpx
 import pytest
 from typer.testing import CliRunner
 
-from gestor_notas import cli
-from gestor_notas.editor import EditorUnavailable
+from gestor_notas_cli import cli
+from gestor_notas_cli.editor import EditorUnavailable
 
 
 runner = CliRunner()
@@ -103,7 +103,7 @@ def test_edit_by_name_prompt_numeric_and_selection(monkeypatch):
 
 
 def test_edit_name_cancel_missing_and_selection_unavailable(monkeypatch):
-    from gestor_notas.selector import SelectionUnavailable
+    from gestor_notas_cli.selector import SelectionUnavailable
 
     for notes, selection, code, message in [
         ([], Mock(), 1, "No se encontraron"),

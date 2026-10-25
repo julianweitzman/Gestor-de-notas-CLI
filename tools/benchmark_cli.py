@@ -26,12 +26,13 @@ def main():
         if probe.connect_ex(("127.0.0.1", 8000)) == 0:
             parser.error("El puerto 8000 está ocupado. El benchmark necesita iniciar su propio servidor.")
     commands = {
-        "Python": [sys.executable, "-c", "from gestor_notas.cli import app; app()"],
+        "Python": [sys.executable, "-m", "gestor_notas_cli"],
         "C#": [str(args.cli.resolve())],
     }
     with tempfile.TemporaryDirectory(prefix="notas-benchmark-") as directory:
         env = {**os.environ, "NOTAS_DATA_DIR": directory, "NOTAS_PYTHON": sys.executable,
-               "PYTHONIOENCODING": "utf-8"}
+               "PYTHONIOENCODING": "utf-8",
+               "PYTHONPATH": str(root / "legacy") + os.pathsep + os.environ.get("PYTHONPATH", "")}
 
         def measure(command, arguments):
             samples = []

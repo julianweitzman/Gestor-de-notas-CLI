@@ -7,7 +7,7 @@ from prompt_toolkit.input import create_pipe_input
 from prompt_toolkit.output import DummyOutput
 from typer.testing import CliRunner
 
-from gestor_notas import cli, selector
+from gestor_notas_cli import cli, selector
 from gestor_notas.api import create_app
 from gestor_notas.storage import Repository
 

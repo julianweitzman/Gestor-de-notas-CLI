@@ -111,7 +111,7 @@ dotnet test cli/Notas.Cli.Tests
 .\.venv\Scripts\python -m pytest -q --basetemp=.test-tmp-local
 ```
 
-Las pruebas Python incluyen los contratos HTTP, persistencia y el ejecutable C# publicado. `NOTAS_CLI` permite probar otra publicación. Las pruebas que necesitan el puerto 8000 se omiten si está ocupado. Las pruebas históricas de la CLI Python se conservan como referencia de comportamiento; sus dependencias solo se instalan con `[test]`, y esa CLI ya no se distribuye como comando.
+Las pruebas Python incluyen los contratos HTTP, persistencia y el ejecutable C# publicado. `NOTAS_CLI` permite probar otra publicación. Las pruebas que necesitan el puerto 8000 se omiten si está ocupado. La CLI Python histórica está en [`legacy/`](legacy/README.md), junto con sus instrucciones de ejecución. Sus pruebas se conservan como referencia de comportamiento y sus dependencias solo se instalan con `[test]`. El paquete del backend ya no incluye código de CLI.
 
 Para iterar sin publicar:
 
