@@ -8,7 +8,7 @@ from rich.text import Text
 from .models import NoteCreate
 from .server import ServerError, api_client
 
-app = typer.Typer(help="Creá y consultá tus notas locales.", no_args_is_help=True)
+app = typer.Typer(help="Creá, consultá y eliminá tus notas locales.", no_args_is_help=True)
 
 
 def edit_text() -> str | None:
@@ -34,6 +34,8 @@ def request(method: str, path: str, **kwargs):
             if response.status_code == 422:
                 raise ServerError("Los datos enviados no son válidos.")
             response.raise_for_status()
+            if response.status_code == 204:
+                return None
             return response.json()
     except (ServerError, httpx.HTTPError, ValueError) as exc:
         message = str(exc)
@@ -41,6 +43,8 @@ def request(method: str, path: str, **kwargs):
             message = "No se pudo completar la solicitud a la API."
             if method == "POST":
                 message += " La nota podría haberse guardado; consultá 'notas listar' antes de intentar nuevamente."
+            elif method == "DELETE":
+                message += " La nota podría haberse eliminado; consultá 'notas listar' para verificarlo."
         typer.echo(f"Error: {message}", err=True)
         raise typer.Exit(1) from exc
 
@@ -126,6 +130,20 @@ def get_note(
         typer.echo("Consulta cancelada.")
         return
     show_note(selected)
+
+
+@app.command("eliminar", help="Eliminar permanentemente una nota por ID.")
+def delete_note(
+    note_id: Annotated[int, typer.Argument(min=1, help="ID de la nota que se eliminará.")],
+    forsar: Annotated[bool, typer.Option("--forsar", help="Eliminar sin pedir confirmación.")] = False,
+) -> None:
+    if not forsar:
+        note = request("GET", f"/notas/{note_id}")
+        if not typer.confirm(f"¿Eliminar permanentemente la nota {note_id} ({note['nombre']})?", default=False):
+            typer.echo("Eliminación cancelada.")
+            return
+    request("DELETE", f"/notas/{note_id}")
+    typer.echo(f"Nota {note_id} eliminada.")
 
 
 @app.command("servidor", help="Mantener la API encendida; Ctrl+C para detenerla.")

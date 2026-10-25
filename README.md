@@ -59,6 +59,7 @@ notas crear --nombre "Pendiente"
 notas listar
 notas ver 1
 notas ver "Idea"
+notas eliminar 1
 ```
 
 Si omitís el nombre, la CLI lo pregunta. Si omitís `--texto`, abre un editor de terminal con varias líneas: Enter agrega una línea, las flechas permiten moverse y Retroceso/Supr borran caracteres. Podés volver a líneas anteriores y corregirlas. Ctrl+S o F2 envían el contenido; Ctrl+C o Ctrl+Q cancelan sin guardar. Los atajos aparecen en pantalla. `--texto` sigue disponible para automatizar y no abre el editor.
@@ -84,9 +85,12 @@ Se guardan `notas.sqlite3` y `servidor.log` en el directorio de datos del usuari
 - `POST /notas`: JSON con `nombre` y `texto`; devuelve la nota con estado 201, o 409 si el nombre ya existe.
 - `GET /notas`: notas completas, desde la más reciente; `?nombre=texto` filtra por nombre completo o parcial sin distinguir mayúsculas.
 - `GET /notas/{id}`: nota completa, o 404 si no existe; IDs no positivos devuelven 422.
+- `DELETE /notas/{id}`: elimina permanentemente la nota y devuelve 204 sin contenido; 404 si no existe y 422 para IDs no positivos.
 - `GET /health`: identidad de aplicación y versión de protocolo.
 
-Cada nota devuelve `id`, `nombre`, `texto` y `creada_en`. No incluye edición, eliminación ni sincronización.
+Cada nota devuelve `id`, `nombre`, `texto` y `creada_en`. No incluye edición ni sincronización.
+
+`notas eliminar ID` muestra el nombre y pide confirmación (por defecto, no). La eliminación es permanente. Para automatizar, usá `notas eliminar ID --forsar`. Si la nota no existe, el comando informa el error. No se repiten automáticamente las eliminaciones ante errores de conexión.
 
 ## Pruebas
 

@@ -19,3 +19,6 @@ class NoteService:
     def get(self, note_id: int) -> Note | None:
         row = self.repository.get(note_id)
         return Note.model_validate(row) if row else None
+
+    def delete(self, note_id: int) -> bool:
+        return self.repository.delete(note_id)

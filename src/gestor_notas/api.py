@@ -1,6 +1,6 @@
 from contextlib import asynccontextmanager
 from pathlib import Path
-from fastapi import FastAPI, HTTPException, Path as PathParameter
+from fastapi import FastAPI, HTTPException, Path as PathParameter, Response
 from .config import APP_ID, PROTOCOL_VERSION, database_path
 from .models import Note, NoteCreate
 from .service import NoteService
@@ -39,5 +39,11 @@ def create_app(db_path: Path | None = None) -> FastAPI:
         if note is None:
             raise HTTPException(status_code=404, detail="No existe una nota con ese ID.")
         return note
+
+    @application.delete("/notas/{note_id}", status_code=204)
+    def delete_note(note_id: int = PathParameter(gt=0)) -> Response:
+        if not service.delete(note_id):
+            raise HTTPException(status_code=404, detail="No existe una nota con ese ID.")
+        return Response(status_code=204)
 
     return application

@@ -62,3 +62,8 @@ class Repository:
         with self.connection() as connection:
             row = connection.execute("SELECT * FROM notas WHERE id = ?", (note_id,)).fetchone()
             return dict(row) if row else None
+
+    def delete(self, note_id: int) -> bool:
+        with self.connection() as connection:
+            cursor = connection.execute("DELETE FROM notas WHERE id = ?", (note_id,))
+            return cursor.rowcount > 0

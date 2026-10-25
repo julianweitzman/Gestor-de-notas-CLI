@@ -93,3 +93,70 @@ def test_editor_unavailable_is_explained_without_sending(monkeypatch):
     assert result.exit_code == 2
     assert "--texto" in result.output
     request.assert_not_called()
+
+
+def test_delete_confirmation_cancellation_and_errors(monkeypatch):
+    calls = []
+
+    def handle(request):
+        calls.append((request.method, request.url.path))
+        if request.url.path == "/notas/999":
+            return httpx.Response(404, json={"detail": "No existe"})
+        if request.method == "DELETE":
+            return httpx.Response(204)
+        return httpx.Response(200, json={"id": 1, "nombre": "Idea"})
+
+    @contextmanager
+    def fake_client():
+        with httpx.Client(base_url="http://test", transport=httpx.MockTransport(handle)) as client:
+            yield client
+
+    monkeypatch.setattr(cli, "api_client", fake_client)
+    for answer in ("n\n", "\n"):
+        calls.clear()
+        result = runner.invoke(cli.app, ["eliminar", "1"], input=answer)
+        assert result.exit_code == 0, result.output
+        assert "cancelada" in result.output
+        assert calls == [("GET", "/notas/1")]
+
+    calls.clear()
+    result = runner.invoke(cli.app, ["eliminar", "1"], input="y\n")
+    assert result.exit_code == 0, result.output
+    assert "Idea" in result.output
+    assert "Nota 1 eliminada" in result.output
+    assert calls == [("GET", "/notas/1"), ("DELETE", "/notas/1")]
+
+    for option in ("--forsar",):
+        calls.clear()
+        result = runner.invoke(cli.app, ["eliminar", "1", option])
+        assert result.exit_code == 0, result.output
+        assert calls == [("DELETE", "/notas/1")]
+
+    for args in (["eliminar", "999"], ["eliminar", "999", "--forsar"]):
+        result = runner.invoke(cli.app, args)
+        assert result.exit_code == 1
+        assert "No existe una nota" in result.output
+
+    calls.clear()
+    for invalid_id in ("0", "-1", "abc"):
+        assert runner.invoke(cli.app, ["eliminar", "--forsar", "--", invalid_id]).exit_code == 2
+    assert calls == []
+
+
+def test_uncertain_deletion_is_not_retried(monkeypatch):
+    calls = []
+
+    def handle(request):
+        calls.append(request)
+        raise httpx.ReadTimeout("timeout", request=request)
+
+    @contextmanager
+    def fake_client():
+        with httpx.Client(base_url="http://test", transport=httpx.MockTransport(handle)) as client:
+            yield client
+
+    monkeypatch.setattr(cli, "api_client", fake_client)
+    result = runner.invoke(cli.app, ["eliminar", "1", "--forsar"])
+    assert result.exit_code == 1
+    assert "podría haberse eliminado" in result.output
+    assert len(calls) == 1
